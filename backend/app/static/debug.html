@@ -662,8 +662,14 @@
         }
 
         // 正誤判定：
-        // プレイヤーの入力した正規表現が、noise_text内から「correct_stringのみ」を完全に一致して抽出できているか
-        const isSuccess = matchedWords.length === 1 && matchedWords[0] === correctString;
+        // 1. 入力されたパターンが correct_patterns のいずれかと文字列として一致しているか
+        const normalizedInput = patternText.trim();
+        const isPatternCorrect = currentStageData.correct_patterns.some(p => p.trim() === normalizedInput);
+
+        // 2. プレイヤーの入力した正規表現が、noise_text内から「correct_stringのみ」を完全に一致して抽出できているか
+        const isMatchCorrect = matchedWords.length === 1 && matchedWords[0] === correctString;
+
+        const isSuccess = isPatternCorrect && isMatchCorrect;
 
         if (isSuccess) {
           simStatus.textContent = 'SUCCESS / CLEAR';
@@ -671,10 +677,18 @@
           simStatus.style.color = 'var(--accent-correct)';
           simStatus.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
         } else {
-          simStatus.textContent = 'FAILED';
-          simStatus.style.borderColor = 'var(--accent-error)';
-          simStatus.style.color = 'var(--accent-error)';
-          simStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+          if (isMatchCorrect && !isPatternCorrect) {
+            simStatus.textContent = 'FAILED (ズル防止)';
+            simStatus.style.borderColor = 'var(--accent-warning)';
+            simStatus.style.color = 'var(--accent-warning)';
+            simStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+            valSimMatches.textContent = 'マッチ結果は正しいですが、問題の意図する正規表現パターンではありません。';
+          } else {
+            simStatus.textContent = 'FAILED';
+            simStatus.style.borderColor = 'var(--accent-error)';
+            simStatus.style.color = 'var(--accent-error)';
+            simStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+          }
         }
 
         // 入力された正規表現に基づいて、単語のハイライトをリアルタイム更新

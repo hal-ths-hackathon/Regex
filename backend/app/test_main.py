@@ -73,7 +73,7 @@ class TestRegexGameAPI(unittest.TestCase):
         
         for i, generator in enumerate(generators, 1):
             for level in ["easy", "hard"]:
-                hint, correct, dummies, correct_patterns, dummy_patterns = generator(level)
+                hint, correct, dummies, correct_patterns, dummy_patterns, pure_noises = generator(level)
                 
                 # 各変数の型アサート
                 self.assertIsInstance(hint, str, f"Ex{i} hint must be str")
@@ -81,6 +81,7 @@ class TestRegexGameAPI(unittest.TestCase):
                 self.assertIsInstance(dummies, list, f"Ex{i} dummies must be list")
                 self.assertIsInstance(correct_patterns, list, f"Ex{i} correct_patterns must be list")
                 self.assertIsInstance(dummy_patterns, list, f"Ex{i} dummy_patterns must be list")
+                self.assertIsInstance(pure_noises, list, f"Ex{i} pure_noises must be list")
                 
                 # 正解パターンとダミーパターンが重複していないこと
                 intersection = set(correct_patterns) & set(dummy_patterns)
@@ -122,5 +123,52 @@ class TestRegexGameAPI(unittest.TestCase):
         avg_hard = sum(hard_lengths) / len(hard_lengths)
         self.assertGreater(avg_hard, avg_easy, f"Hard mode should have more noise than Easy mode. Easy: {avg_easy}, Hard: {avg_hard}")
 
+    def test_correct_patterns_simulate_no_false_positives(self):
+        """全20演習問題において、生成されたnoise_textの各単語に対して、
+        correct_patterns のいずれかを適用したときに、correct_string にのみマッチし、
+        他のダミーやノイズに誤マッチしないことを検証する"""
+        from app.generator import (
+            generate_ex1_problem, generate_ex2_problem, generate_ex3_problem, generate_ex4_problem, generate_ex5_problem,
+            generate_ex6_problem, generate_ex7_problem, generate_ex8_problem, generate_ex9_problem, generate_ex10_problem,
+            generate_ex11_problem, generate_ex12_problem, generate_ex13_problem, generate_ex14_problem, generate_ex15_problem,
+            generate_ex16_problem, generate_ex17_problem, generate_ex18_problem, generate_ex19_problem, generate_ex20_problem
+        )
+        import random
+        generators = [
+            generate_ex1_problem, generate_ex2_problem, generate_ex3_problem, generate_ex4_problem, generate_ex5_problem,
+            generate_ex6_problem, generate_ex7_problem, generate_ex8_problem, generate_ex9_problem, generate_ex10_problem,
+            generate_ex11_problem, generate_ex12_problem, generate_ex13_problem, generate_ex14_problem, generate_ex15_problem,
+            generate_ex16_problem, generate_ex17_problem, generate_ex18_problem, generate_ex19_problem, generate_ex20_problem
+        ]
+        
+        for i, generator in enumerate(generators, 1):
+            for level in ["easy", "hard"]:
+                # 15回ずつ生成して検証
+                for _ in range(15):
+                    hint, correct, dummies, correct_patterns, dummy_patterns, pure_noises = generator(level)
+                    
+                    # noise_text を構築する (generate_stage と同じロジック)
+                    noise_count = random.randint(3, 6) if level == "easy" else random.randint(12, 18)
+                    selected_noises = [random.choice(pure_noises) for _ in range(noise_count)]
+                    elements = [correct] + dummies + selected_noises
+                    random.shuffle(elements)
+                    noise_text = " ".join(elements)
+                    words = noise_text.split(" ")
+                    
+                    for pattern in correct_patterns:
+                        compiled = re.compile(pattern)
+                        matched_words = [w for w in words if compiled.search(w)]
+                        
+                        # マッチした単語が correct_string の1つだけであることを確認
+                        self.assertEqual(
+                            len(matched_words), 1,
+                            f"Ex{i} ({level}): Pattern '{pattern}' matched multiple/no words: {matched_words} in noise text: '{noise_text}'"
+                        )
+                        self.assertEqual(
+                            matched_words[0], correct,
+                            f"Ex{i} ({level}): Pattern '{pattern}' matched '{matched_words[0]}' instead of correct_string '{correct}'"
+                        )
+
 if __name__ == "__main__":
     unittest.main()
+
