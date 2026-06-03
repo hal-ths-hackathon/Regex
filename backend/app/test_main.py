@@ -20,12 +20,39 @@ class TestRegexGameAPI(unittest.TestCase):
             self.assertIn("hint", data)
             self.assertIn("noise_text", data)
             self.assertIn("correct_string", data)
+            self.assertIn("choices", data)
+            self.assertIn("correct_patterns", data)
             
             # 各値の型検証
             self.assertIsInstance(data["stage_id"], str)
             self.assertIsInstance(data["hint"], str)
             self.assertIsInstance(data["noise_text"], str)
             self.assertIsInstance(data["correct_string"], str)
+            self.assertIsInstance(data["choices"], list)
+            self.assertIsInstance(data["correct_patterns"], list)
+            
+            # 要素の型検証
+            for choice in data["choices"]:
+                self.assertIsInstance(choice, str)
+            for pattern in data["correct_patterns"]:
+                self.assertIsInstance(pattern, str)
+
+    def test_generate_choices_validity(self):
+        """生成されたchoicesが仕様を満たしているか確認（4択、正解が1つだけ含まれ、重複がない）"""
+        for level in ["easy", "hard"]:
+            for _ in range(5):
+                stage = generate_stage(level)
+                choices = stage["choices"]
+                correct = stage["correct_string"]
+                
+                # 選択肢の数が4であることを確認
+                self.assertEqual(len(choices), 4)
+                
+                # 4つの選択肢はユニークであることを確認
+                self.assertEqual(len(set(choices)), 4, f"choices {choices} must have unique values")
+                
+                # choices の中に correct_string がちょうど1回だけ存在することを確認
+                self.assertEqual(choices.count(correct), 1, f"correct_string '{correct}' must be present exactly once in choices {choices}")
 
     def test_generate_logic_randomness(self):
         """複数回生成したときに結果が動的に変化しているか確認"""
