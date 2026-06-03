@@ -18,7 +18,7 @@ from app.models import Base
 
 
 def run_migrations_offline():
-    url = os.environ.get('DATABASE_URL')
+    url = os.environ.get('DATABASE_URL', 'sqlite:///./test.db')
     context.configure(url=url, target_metadata=Base.metadata, literal_binds=True)
     with context.begin_transaction():
         context.run_migrations()

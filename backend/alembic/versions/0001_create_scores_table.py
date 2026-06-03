@@ -20,7 +20,7 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('player_name', sa.String(length=3), nullable=False),
         sa.Column('clear_time_ms', sa.Integer, nullable=False),
-        sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()')),
+        sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP')),
     )
 
 

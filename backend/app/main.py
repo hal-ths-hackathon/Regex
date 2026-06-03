@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os
 from uuid import uuid4
 
 app = FastAPI(title="Regex Game API")
