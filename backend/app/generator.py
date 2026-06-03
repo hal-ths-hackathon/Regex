@@ -42,7 +42,7 @@ def generate_zip_code_problem(level: str) -> tuple[str, str, list[str], list[str
             f"{generate_digits(3)}{generate_digits(4)}",        # ハイフンなし
         ]
         
-    patterns = ["^\\d{3}-\\d{4}$", "^[0-9]{3}-[0-9]{4}$"]
+    patterns = [r"^\d{3}-\d{4}$", r"^[0-9]{3}-[0-9]{4}$"]
     return hint, correct, dummies, patterns
 
 def generate_date_problem(level: str) -> tuple[str, str, list[str], list[str]]:
@@ -77,7 +77,7 @@ def generate_date_problem(level: str) -> tuple[str, str, list[str], list[str]]:
             f"{random.randint(10, 99):d}-{month}-{day}",            # 年が明らかに短い
         ]
 
-    patterns = ["^\\d{4}-\\d{2}-\\d{2}$", "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"]
+    patterns = [r"^\d{4}-\d{2}-\d{2}$", r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"]
     return hint, correct, dummies, patterns
 
 def generate_phone_problem(level: str) -> tuple[str, str, list[str], list[str]]:
@@ -109,7 +109,7 @@ def generate_phone_problem(level: str) -> tuple[str, str, list[str], list[str]]:
             f"abc-defg-hijk",                                      # 全て英字
         ]
 
-    patterns = ["^0[89]0-\\d{4}-\\d{4}$", "^0(80|90)-\\d{4}-\\d{4}$", "^0[89]0-[0-9]{4}-[0-9]{4}$"]
+    patterns = [r"^0[89]0-\d{4}-\d{4}$", r"^0(80|90)-\d{4}-\d{4}$", r"^0[89]0-[0-9]{4}-[0-9]{4}$"]
     return hint, correct, dummies, patterns
 
 def generate_time_problem(level: str) -> tuple[str, str, list[str], list[str]]:
@@ -140,7 +140,7 @@ def generate_time_problem(level: str) -> tuple[str, str, list[str], list[str]]:
             f"ab:cd",                                              # 英字のみ
         ]
 
-    patterns = ["^\\d{2}:\\d{2}$", "^[0-9]{2}:[0-9]{2}$", "^(0\\d|1\\d|2[0-3]):[0-5]\\d$"]
+    patterns = [r"^\d{2}:\d{2}$", r"^[0-9]{2}:[0-9]{2}$", r"^(0\d|1\d|2[0-3]):[0-5]\d$"]
     return hint, correct, dummies, patterns
 
 def generate_pure_noise(count: int) -> list[str]:
