@@ -9,10 +9,10 @@ def generate_chars(length: int, chars: str = "abcdefghijklmnopqrstuvwxyz") -> st
     """指定された長さのランダムな英字文字列を生成する"""
     return "".join(random.choice(chars) for _ in range(length))
 
-def generate_zip_code_problem(level: str) -> tuple[str, str, list[str]]:
+def generate_zip_code_problem(level: str) -> tuple[str, str, list[str], list[str]]:
     """郵便番号問題のデータを生成する
     Returns:
-        hint (str), correct_string (str), dummies (list[str])
+        hint (str), correct_string (str), dummies (list[str]), correct_patterns (list[str])
     """
     # 正解の生成
     prefix = generate_digits(3)
@@ -42,12 +42,13 @@ def generate_zip_code_problem(level: str) -> tuple[str, str, list[str]]:
             f"{generate_digits(3)}{generate_digits(4)}",        # ハイフンなし
         ]
         
-    return hint, correct, dummies
+    patterns = [r"^\d{3}-\d{4}$", r"^[0-9]{3}-[0-9]{4}$"]
+    return hint, correct, dummies, patterns
 
-def generate_date_problem(level: str) -> tuple[str, str, list[str]]:
+def generate_date_problem(level: str) -> tuple[str, str, list[str], list[str]]:
     """日付問題のデータを生成する
     Returns:
-        hint (str), correct_string (str), dummies (list[str])
+        hint (str), correct_string (str), dummies (list[str]), correct_patterns (list[str])
     """
     # 正解の生成
     year = str(random.randint(1900, 2099))
@@ -76,12 +77,13 @@ def generate_date_problem(level: str) -> tuple[str, str, list[str]]:
             f"{random.randint(10, 99):d}-{month}-{day}",            # 年が明らかに短い
         ]
 
-    return hint, correct, dummies
+    patterns = [r"^\d{4}-\d{2}-\d{2}$", r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"]
+    return hint, correct, dummies, patterns
 
-def generate_phone_problem(level: str) -> tuple[str, str, list[str]]:
+def generate_phone_problem(level: str) -> tuple[str, str, list[str], list[str]]:
     """携帯電話番号問題のデータを生成する
     Returns:
-        hint (str), correct_string (str), dummies (list[str])
+        hint (str), correct_string (str), dummies (list[str]), correct_patterns (list[str])
     """
     carrier = random.choice(["090", "080"])
     part1 = generate_digits(4)
@@ -107,12 +109,13 @@ def generate_phone_problem(level: str) -> tuple[str, str, list[str]]:
             f"abc-defg-hijk",                                      # 全て英字
         ]
 
-    return hint, correct, dummies
+    patterns = [r"^0[89]0-\d{4}-\d{4}$", r"^0(80|90)-\d{4}-\d{4}$", r"^0[89]0-[0-9]{4}-[0-9]{4}$"]
+    return hint, correct, dummies, patterns
 
-def generate_time_problem(level: str) -> tuple[str, str, list[str]]:
+def generate_time_problem(level: str) -> tuple[str, str, list[str], list[str]]:
     """時刻問題のデータを生成する
     Returns:
-        hint (str), correct_string (str), dummies (list[str])
+        hint (str), correct_string (str), dummies (list[str]), correct_patterns (list[str])
     """
     hour = f"{random.randint(0, 23):02d}"
     minute = f"{random.randint(0, 59):02d}"
@@ -137,7 +140,8 @@ def generate_time_problem(level: str) -> tuple[str, str, list[str]]:
             f"ab:cd",                                              # 英字のみ
         ]
 
-    return hint, correct, dummies
+    patterns = [r"^\d{2}:\d{2}$", r"^[0-9]{2}:[0-9]{2}$", r"^(0\d|1\d|2[0-3]):[0-5]\d$"]
+    return hint, correct, dummies, patterns
 
 def generate_pure_noise(count: int) -> list[str]:
     """完全なランダムノイズ（英数字や記号）を生成する"""
@@ -168,7 +172,7 @@ def generate_stage(level: str = "easy") -> dict:
         generate_time_problem
     ]
     generator = random.choice(generators)
-    hint, correct_string, dummies = generator(level)
+    hint, correct_string, dummies, correct_patterns = generator(level)
 
     # 難易度に応じた純粋なノイズ数
     noise_count = random.randint(3, 6) if level == "easy" else random.randint(12, 18)
@@ -182,9 +186,16 @@ def generate_stage(level: str = "easy") -> dict:
     # 空白区切りで結合
     noise_text = " ".join(elements)
 
+    # 4択の選択肢を生成 (正解1つ + ダミー3つをランダム選択してシャッフル)
+    selected_dummies = random.sample(dummies, 3)
+    choices = [correct_string] + selected_dummies
+    random.shuffle(choices)
+
     return {
         "stage_id": str(uuid4()),
         "hint": hint,
         "noise_text": noise_text,
-        "correct_string": correct_string
+        "correct_string": correct_string,
+        "choices": choices,
+        "correct_patterns": correct_patterns
     }

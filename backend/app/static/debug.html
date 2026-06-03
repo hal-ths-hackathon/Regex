@@ -285,6 +285,66 @@
     .hidden {
       display: none;
     }
+
+    .choices-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .choice-item {
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .choice-item.correct {
+      border-color: var(--accent-correct);
+      background-color: rgba(16, 185, 129, 0.05);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.05);
+    }
+
+    .choice-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-family: var(--font-family);
+      font-weight: 600;
+    }
+
+    .choice-badge.correct {
+      background-color: var(--accent-correct);
+      color: var(--bg-color);
+    }
+
+    .choice-badge.dummy {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+    }
+
+    .patterns-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .pattern-item {
+      background-color: rgba(0, 0, 0, 0.25);
+      border: 1px dashed var(--border-color);
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 1.05rem;
+      color: #38bdf8;
+    }
   </style>
 </head>
 <body>
@@ -336,6 +396,16 @@
         </div>
 
         <div class="meta-item">
+          <div class="meta-title">Choices (4択の選択肢 - 正解は緑バッジ)</div>
+          <div id="val-choices-container" class="choices-container"></div>
+        </div>
+
+        <div class="meta-item">
+          <div class="meta-title">Correct Patterns (正解の正規表現パターン例)</div>
+          <div id="val-patterns-container" class="patterns-container"></div>
+        </div>
+
+        <div class="meta-item">
           <div class="meta-title">Noise Text (ハイライト検証 - 正解は緑色)</div>
           <div id="val-noise-container" class="noise-container"></div>
         </div>
@@ -374,6 +444,8 @@
     const valStageId = document.getElementById('val-stage-id');
     const valHint = document.getElementById('val-hint');
     const valCorrect = document.getElementById('val-correct');
+    const valChoicesContainer = document.getElementById('val-choices-container');
+    const valPatternsContainer = document.getElementById('val-patterns-container');
     const valNoiseContainer = document.getElementById('val-noise-container');
     const valJson = document.getElementById('val-json');
     
@@ -421,9 +493,46 @@
       valHint.textContent = data.hint;
       valCorrect.textContent = data.correct_string;
       
+      const correctString = data.correct_string;
+
+      // 4択の選択肢を描画
+      valChoicesContainer.innerHTML = '';
+      data.choices.forEach(choice => {
+        const div = document.createElement('div');
+        div.className = 'choice-item';
+        if (choice === correctString) {
+          div.classList.add('correct');
+        }
+        
+        const textSpan = document.createElement('span');
+        textSpan.textContent = choice;
+        div.appendChild(textSpan);
+        
+        const badgeSpan = document.createElement('span');
+        badgeSpan.className = 'choice-badge';
+        if (choice === correctString) {
+          badgeSpan.classList.add('correct');
+          badgeSpan.textContent = 'CORRECT';
+        } else {
+          badgeSpan.className += ' dummy';
+          badgeSpan.textContent = 'DUMMY';
+        }
+        div.appendChild(badgeSpan);
+        
+        valChoicesContainer.appendChild(div);
+      });
+
+      // 正解の正規表現パターンを描画
+      valPatternsContainer.innerHTML = '';
+      data.correct_patterns.forEach(pattern => {
+        const div = document.createElement('div');
+        div.className = 'pattern-item';
+        div.textContent = pattern;
+        valPatternsContainer.appendChild(div);
+      });
+
       // noise_textを単語に分解してハイライト
       valNoiseContainer.innerHTML = '';
-      const correctString = data.correct_string;
       const noiseText = data.noise_text;
       
       // 空白で分解
