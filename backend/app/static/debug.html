@@ -203,7 +203,7 @@
     }
 
     .word.correct {
-      background-color: rgba(16, 185, 129, 0.2);
+      background-color: rgba(16, 185, 129, 0.25);
       border-color: var(--accent-correct);
       color: var(--primary-color);
       font-weight: bold;
@@ -298,21 +298,27 @@
       padding: 0.8rem 1rem;
       border-radius: 8px;
       font-family: monospace;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      cursor: pointer;
       transition: all 0.2s ease;
+    }
+
+    .choice-item:hover {
+      background-color: rgba(100, 255, 218, 0.05);
+      border-color: var(--primary-color);
+      transform: translateY(-1px);
     }
 
     .choice-item.correct {
       border-color: var(--accent-correct);
-      background-color: rgba(16, 185, 129, 0.05);
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.05);
+      background-color: rgba(16, 185, 129, 0.03);
     }
 
     .choice-badge {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
       font-family: var(--font-family);
@@ -345,13 +351,45 @@
       font-size: 1.05rem;
       color: #38bdf8;
     }
+
+    /* シミュレーター用スタイル */
+    .regex-input-field {
+      width: 100%;
+      font-family: monospace;
+      font-size: 1.2rem;
+      color: var(--primary-color);
+      border: 1px solid var(--border-color);
+      background-color: rgba(0, 0, 0, 0.35);
+      outline: none;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .regex-input-field:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 10px rgba(100, 255, 218, 0.15);
+    }
+
+    .sim-status-badge {
+      display: inline-block;
+      padding: 0.5rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 1rem;
+      border: 1px solid var(--border-color);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.2s ease;
+      color: var(--text-muted);
+    }
   </style>
 </head>
 <body>
 
   <header>
     <h1>Regex Game - Backend Debug</h1>
-    <p>API (<code>GET /api/v1/stages/generate</code>) のレスポンスおよび問題生成ロジックの動作検証用コンソール</p>
+    <p>演習問題(Ex1〜Ex20)および正規表現判定シミュレータ搭載デバッグコンソール</p>
   </header>
 
   <main>
@@ -371,7 +409,7 @@
         
         <button id="btn-fetch" class="btn">
           <span id="btn-spinner" class="loading-spinner hidden"></span>
-          <span id="btn-text">問題を生成する</span>
+          <span id="btn-text">演習問題を生成する</span>
         </button>
       </div>
     </div>
@@ -386,27 +424,48 @@
         </div>
 
         <div class="meta-item">
-          <div class="meta-title">Hint (ヒント)</div>
-          <div id="val-hint" class="meta-content"></div>
+          <div class="meta-title">Hint (問題文)</div>
+          <div id="val-hint" class="meta-content" style="font-weight: bold;"></div>
         </div>
 
         <div class="meta-item">
-          <div class="meta-title">Correct String (正解の正則表現対象文字列)</div>
+          <div class="meta-title">Correct String (マッチ対象の正解文字列)</div>
           <div id="val-correct" class="meta-content correct-badge"></div>
         </div>
 
+        <!-- 4択選択肢 -->
         <div class="meta-item">
-          <div class="meta-title">Choices (4択の選択肢 - 正解は緑バッジ)</div>
+          <div class="meta-title">Choices (正規表現の4択 - クリックして入力フォームへ自動代入)</div>
           <div id="val-choices-container" class="choices-container"></div>
         </div>
 
+        <!-- 解答例パターン -->
         <div class="meta-item">
-          <div class="meta-title">Correct Patterns (正解の正規表現パターン例)</div>
+          <div class="meta-title">Correct Patterns (正解となる正規表現パターンの例)</div>
           <div id="val-patterns-container" class="patterns-container"></div>
         </div>
 
+        <!-- シミュレータ入力部 -->
+        <div class="meta-item" style="border-top: 1px solid var(--border-color); padding-top: 1.2rem;">
+          <div class="meta-title">Regex Input (正規表現入力)</div>
+          <input type="text" id="input-regex" class="regex-input-field" placeholder="例: ^\d{3}-\d{4}$">
+        </div>
+
+        <!-- シミュレータ判定結果 -->
         <div class="meta-item">
-          <div class="meta-title">Noise Text (ハイライト検証 - 正解は緑色)</div>
+          <div class="meta-title">Simulation Status (正誤判定結果)</div>
+          <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+            <div id="sim-status" class="sim-status-badge">WAITING</div>
+            <div style="display: flex; flex-direction: column; gap: 0.1rem;">
+              <span class="meta-title" style="font-size: 0.7rem;">Matched Words (マッチした単語)</span>
+              <div id="val-sim-matches" style="font-family: monospace; font-size: 0.95rem; color: var(--primary-color);">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- テキスト領域 -->
+        <div class="meta-item">
+          <div class="meta-title">Noise Text (テキストエリア内のリアルタイムマッチハイライト)</div>
           <div id="val-noise-container" class="noise-container"></div>
         </div>
 
@@ -429,7 +488,7 @@
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
       </svg>
-      <p>「問題を生成する」ボタンを押すと、バックエンドAPIから取得したデータがここに表示されます。</p>
+      <p>「演習問題を生成する」ボタンを押すと、バックエンドAPIから取得したデータがここに表示されます。</p>
     </div>
   </main>
 
@@ -448,10 +507,16 @@
     const valPatternsContainer = document.getElementById('val-patterns-container');
     const valNoiseContainer = document.getElementById('val-noise-container');
     const valJson = document.getElementById('val-json');
+
+    const inputRegex = document.getElementById('input-regex');
+    const simStatus = document.getElementById('sim-status');
+    const valSimMatches = document.getElementById('val-sim-matches');
     
     const accordion = document.getElementById('json-accordion');
     const accordionToggle = document.getElementById('accordion-toggle');
     const accordionArrow = document.getElementById('accordion-arrow');
+
+    let currentStageData = null;
 
     // 生JSONのアコーディオン切り替え
     accordionToggle.addEventListener('click', () => {
@@ -475,6 +540,7 @@
         }
         
         const data = await response.json();
+        currentStageData = data;
         renderResult(data);
       } catch (error) {
         console.error('Fetch error:', error);
@@ -483,7 +549,7 @@
         // ローディング状態終了
         btnFetch.disabled = false;
         btnSpinner.classList.add('hidden');
-        btnText.textContent = '問題を生成する';
+        btnText.textContent = '演習問題を生成する';
       }
     });
 
@@ -493,14 +559,29 @@
       valHint.textContent = data.hint;
       valCorrect.textContent = data.correct_string;
       
-      const correctString = data.correct_string;
+      // 入力フォームとシミュレータのリセット
+      inputRegex.value = '';
+      simStatus.textContent = 'WAITING';
+      simStatus.style.borderColor = 'var(--border-color)';
+      simStatus.style.color = 'var(--text-muted)';
+      simStatus.style.backgroundColor = 'transparent';
+      valSimMatches.textContent = '-';
 
       // 4択の選択肢を描画
       valChoicesContainer.innerHTML = '';
+      const correctPatterns = data.correct_patterns;
+
       data.choices.forEach(choice => {
         const div = document.createElement('div');
         div.className = 'choice-item';
-        if (choice === correctString) {
+        
+        // 選択肢をクリックした際に入力欄にコピーしてシミュレーション実行
+        div.addEventListener('click', () => {
+          inputRegex.value = choice;
+          runSimulation();
+        });
+        
+        if (correctPatterns.includes(choice)) {
           div.classList.add('correct');
         }
         
@@ -510,11 +591,11 @@
         
         const badgeSpan = document.createElement('span');
         badgeSpan.className = 'choice-badge';
-        if (choice === correctString) {
+        if (correctPatterns.includes(choice)) {
           badgeSpan.classList.add('correct');
-          badgeSpan.textContent = 'CORRECT';
+          badgeSpan.textContent = 'CORRECT PATTERN';
         } else {
-          badgeSpan.className += ' dummy';
+          badgeSpan.classList.add('dummy');
           badgeSpan.textContent = 'DUMMY';
         }
         div.appendChild(badgeSpan);
@@ -524,34 +605,15 @@
 
       // 正解の正規表現パターンを描画
       valPatternsContainer.innerHTML = '';
-      data.correct_patterns.forEach(pattern => {
+      correctPatterns.forEach(pattern => {
         const div = document.createElement('div');
         div.className = 'pattern-item';
         div.textContent = pattern;
         valPatternsContainer.appendChild(div);
       });
 
-      // noise_textを単語に分解してハイライト
-      valNoiseContainer.innerHTML = '';
-      const noiseText = data.noise_text;
-      
-      // 空白で分解
-      const words = noiseText.split(' ');
-      
-      words.forEach(word => {
-        const span = document.createElement('span');
-        span.className = 'word';
-        span.textContent = word;
-        
-        // 正解文字列と完全一致する場合はハイライト
-        if (word === correctString) {
-          span.classList.add('correct');
-        }
-        
-        valNoiseContainer.appendChild(span);
-        // 単語の間にわずかなスペースを入れるためにテキストノードを追加
-        valNoiseContainer.appendChild(document.createTextNode(' '));
-      });
+      // 初期のnoise_textをハイライトなしで描画
+      updateNoiseHighlight(null);
       
       // 生JSONを表示
       valJson.textContent = JSON.stringify(data, null, 2);
@@ -559,6 +621,130 @@
       // 表示切り替え
       cardPlaceholder.classList.add('hidden');
       cardResult.classList.remove('hidden');
+    }
+
+    // リアルタイムシミュレーションの監視
+    inputRegex.addEventListener('input', runSimulation);
+
+    // シミュレータ判定の実行
+    function runSimulation() {
+      if (!currentStageData) return;
+
+      const patternText = inputRegex.value.trim();
+      if (!patternText) {
+        simStatus.textContent = 'WAITING';
+        simStatus.style.borderColor = 'var(--border-color)';
+        simStatus.style.color = 'var(--text-muted)';
+        simStatus.style.backgroundColor = 'transparent';
+        valSimMatches.textContent = '-';
+        updateNoiseHighlight(null);
+        return;
+      }
+
+      try {
+        const regex = new RegExp(patternText);
+        const words = currentStageData.noise_text.split(' ');
+        const correctString = currentStageData.correct_string;
+
+        // 各単語に正規表現を適用し、マッチした単語のリストを抽出
+        const matchedWords = [];
+        words.forEach(word => {
+          if (regex.test(word)) {
+            matchedWords.push(word);
+          }
+        });
+
+        // マッチした単語を表示
+        if (matchedWords.length > 0) {
+          valSimMatches.textContent = matchedWords.join(', ');
+        } else {
+          valSimMatches.textContent = '(マッチなし)';
+        }
+
+        // 正誤判定：
+        // 1. 入力されたパターンが correct_patterns のいずれかと文字列として一致しているか
+        const normalizedInput = patternText.trim();
+        const isPatternCorrect = currentStageData.correct_patterns.some(p => p.trim() === normalizedInput);
+
+        // 2. プレイヤーの入力した正規表現が、noise_text内から「correct_stringのみ」を完全に一致して抽出できているか
+        const isMatchCorrect = matchedWords.length === 1 && matchedWords[0] === correctString;
+
+        const isSuccess = isPatternCorrect && isMatchCorrect;
+
+        if (isSuccess) {
+          simStatus.textContent = 'SUCCESS / CLEAR';
+          simStatus.style.borderColor = 'var(--accent-correct)';
+          simStatus.style.color = 'var(--accent-correct)';
+          simStatus.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+        } else {
+          if (isMatchCorrect && !isPatternCorrect) {
+            simStatus.textContent = 'FAILED (ズル防止)';
+            simStatus.style.borderColor = 'var(--accent-warning)';
+            simStatus.style.color = 'var(--accent-warning)';
+            simStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+            valSimMatches.textContent = 'マッチ結果は正しいですが、問題の意図する正規表現パターンではありません。';
+          } else {
+            simStatus.textContent = 'FAILED';
+            simStatus.style.borderColor = 'var(--accent-error)';
+            simStatus.style.color = 'var(--accent-error)';
+            simStatus.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+          }
+        }
+
+        // 入力された正規表現に基づいて、単語のハイライトをリアルタイム更新
+        updateNoiseHighlight(regex);
+
+      } catch (error) {
+        simStatus.textContent = 'SYNTAX ERROR';
+        simStatus.style.borderColor = 'var(--accent-warning)';
+        simStatus.style.color = 'var(--accent-warning)';
+        simStatus.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+        valSimMatches.textContent = error.message;
+        updateNoiseHighlight(null);
+      }
+    }
+
+    // noise_text 内の単語をリアルタイムでハイライト
+    function updateNoiseHighlight(regex) {
+      if (!currentStageData) return;
+
+      valNoiseContainer.innerHTML = '';
+      const noiseText = currentStageData.noise_text;
+      const correctString = currentStageData.correct_string;
+      const words = noiseText.split(' ');
+
+      words.forEach(word => {
+        const span = document.createElement('span');
+        span.className = 'word';
+        span.textContent = word;
+
+        if (regex) {
+          try {
+            if (regex.test(word)) {
+              if (word === correctString) {
+                // 正解文字列に正しくマッチした場合は緑
+                span.classList.add('correct');
+              } else {
+                // ダミーやノイズに誤ってマッチ（過剰マッチ）した場合は赤
+                span.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                span.style.borderColor = 'var(--accent-error)';
+                span.style.color = '#ff8080';
+              }
+            }
+          } catch (e) {
+            // エラー時は何もしない
+          }
+        } else {
+          // 初期状態などで正規表現がない場合、正解位置のみを控えめに緑枠にする（デバッグ支援）
+          if (word === correctString) {
+            span.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+            span.style.borderStyle = 'dashed';
+          }
+        }
+
+        valNoiseContainer.appendChild(span);
+        valNoiseContainer.appendChild(document.createTextNode(' '));
+      });
     }
   </script>
 </body>

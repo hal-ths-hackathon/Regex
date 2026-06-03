@@ -13,3 +13,28 @@
 * **Backend**: Python (FastAPI)
 * **Database**: PostgreSQL
 * **Infrastructure**: Docker / Docker Compose
+
+## 🚀 ローカル起動と開発・検証手順
+
+### 1. アプリケーションのビルドと起動
+Docker Compose を使用して、バックエンドおよびデータベースを立ち上げます。
+```bash
+# 起動（バックグラウンド実行）
+docker compose up -d --build
+
+# 停止
+docker compose down
+```
+
+### 2. 動作確認用デバッグ画面へのアクセス
+起動後、ブラウザで以下のURLを開くことで、バックエンドの問題自動生成APIと判定ロジックをシミュレーション検証できるデバッグコンソールが利用できます。
+*   **[http://localhost:8090/debug](http://localhost:8090/debug)**
+*   **機能**:
+    *   難易度（Easy/Hard）を選択して、授業演習問題 (Ex1〜Ex20) をランダム生成。
+    *   提示された4択の正規表現パターンをクリック、または手動入力した正規表現が、テキストエリア内の正解単語のみにマッチするかどうかをリアルタイムにシミュレート（SUCCESS / FAILED (ズル防止) / SYNTAX ERROR での視覚的フィードバック）。
+
+### 3. 自動テストの実行
+バックエンドのテストスイートは以下のコマンドでコンテナ内から実行可能です。
+```bash
+docker compose exec backend python3 -m unittest app.test_main
+```

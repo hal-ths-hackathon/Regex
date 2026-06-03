@@ -1,6 +1,6 @@
 import unittest
+import re
 
-# fastapi.testclient と httpx への依存を避けるため、ハンドラー関数を直接インポートしてテストします。
 from app.main import generate, health
 from app.generator import generate_stage
 
@@ -38,12 +38,12 @@ class TestRegexGameAPI(unittest.TestCase):
                 self.assertIsInstance(pattern, str)
 
     def test_generate_choices_validity(self):
-        """生成されたchoicesが仕様を満たしているか確認（4択、正解が1つだけ含まれ、重複がない）"""
+        """生成されたchoicesが仕様を満たしているか確認（4択の正規表現、正解パターンが1つだけ含まれ、重複がない）"""
         for level in ["easy", "hard"]:
-            for _ in range(5):
+            for _ in range(30):
                 stage = generate_stage(level)
                 choices = stage["choices"]
-                correct = stage["correct_string"]
+                correct_patterns = stage["correct_patterns"]
                 
                 # 選択肢の数が4であることを確認
                 self.assertEqual(len(choices), 4)
@@ -51,8 +51,41 @@ class TestRegexGameAPI(unittest.TestCase):
                 # 4つの選択肢はユニークであることを確認
                 self.assertEqual(len(set(choices)), 4, f"choices {choices} must have unique values")
                 
-                # choices の中に correct_string がちょうど1回だけ存在することを確認
-                self.assertEqual(choices.count(correct), 1, f"correct_string '{correct}' must be present exactly once in choices {choices}")
+                # choices の中に correct_patterns に含まれる正解パターンがちょうど1つだけ存在することを確認
+                correct_count = sum(1 for choice in choices if choice in correct_patterns)
+                self.assertEqual(correct_count, 1, f"choices {choices} must contain exactly one pattern from correct_patterns {correct_patterns}")
+
+    def test_generate_all_ex_templates(self):
+        """Ex1からEx20までのすべての問題テンプレートが正常に機能し、型とデータ仕様を満たしているか確認"""
+        from app.generator import (
+            generate_ex1_problem, generate_ex2_problem, generate_ex3_problem, generate_ex4_problem, generate_ex5_problem,
+            generate_ex6_problem, generate_ex7_problem, generate_ex8_problem, generate_ex9_problem, generate_ex10_problem,
+            generate_ex11_problem, generate_ex12_problem, generate_ex13_problem, generate_ex14_problem, generate_ex15_problem,
+            generate_ex16_problem, generate_ex17_problem, generate_ex18_problem, generate_ex19_problem, generate_ex20_problem
+        )
+        
+        generators = [
+            generate_ex1_problem, generate_ex2_problem, generate_ex3_problem, generate_ex4_problem, generate_ex5_problem,
+            generate_ex6_problem, generate_ex7_problem, generate_ex8_problem, generate_ex9_problem, generate_ex10_problem,
+            generate_ex11_problem, generate_ex12_problem, generate_ex13_problem, generate_ex14_problem, generate_ex15_problem,
+            generate_ex16_problem, generate_ex17_problem, generate_ex18_problem, generate_ex19_problem, generate_ex20_problem
+        ]
+        
+        for i, generator in enumerate(generators, 1):
+            for level in ["easy", "hard"]:
+                hint, correct, dummies, correct_patterns, dummy_patterns, pure_noises = generator(level)
+                
+                # 各変数の型アサート
+                self.assertIsInstance(hint, str, f"Ex{i} hint must be str")
+                self.assertIsInstance(correct, str, f"Ex{i} correct must be str")
+                self.assertIsInstance(dummies, list, f"Ex{i} dummies must be list")
+                self.assertIsInstance(correct_patterns, list, f"Ex{i} correct_patterns must be list")
+                self.assertIsInstance(dummy_patterns, list, f"Ex{i} dummy_patterns must be list")
+                self.assertIsInstance(pure_noises, list, f"Ex{i} pure_noises must be list")
+                
+                # 正解パターンとダミーパターンが重複していないこと
+                intersection = set(correct_patterns) & set(dummy_patterns)
+                self.assertEqual(len(intersection), 0, f"Ex{i} correct and dummy patterns must not overlap: {intersection}")
 
     def test_generate_logic_randomness(self):
         """複数回生成したときに結果が動的に変化しているか確認"""
@@ -90,5 +123,52 @@ class TestRegexGameAPI(unittest.TestCase):
         avg_hard = sum(hard_lengths) / len(hard_lengths)
         self.assertGreater(avg_hard, avg_easy, f"Hard mode should have more noise than Easy mode. Easy: {avg_easy}, Hard: {avg_hard}")
 
+    def test_correct_patterns_simulate_no_false_positives(self):
+        """全20演習問題において、生成されたnoise_textの各単語に対して、
+        correct_patterns のいずれかを適用したときに、correct_string にのみマッチし、
+        他のダミーやノイズに誤マッチしないことを検証する"""
+        from app.generator import (
+            generate_ex1_problem, generate_ex2_problem, generate_ex3_problem, generate_ex4_problem, generate_ex5_problem,
+            generate_ex6_problem, generate_ex7_problem, generate_ex8_problem, generate_ex9_problem, generate_ex10_problem,
+            generate_ex11_problem, generate_ex12_problem, generate_ex13_problem, generate_ex14_problem, generate_ex15_problem,
+            generate_ex16_problem, generate_ex17_problem, generate_ex18_problem, generate_ex19_problem, generate_ex20_problem
+        )
+        import random
+        generators = [
+            generate_ex1_problem, generate_ex2_problem, generate_ex3_problem, generate_ex4_problem, generate_ex5_problem,
+            generate_ex6_problem, generate_ex7_problem, generate_ex8_problem, generate_ex9_problem, generate_ex10_problem,
+            generate_ex11_problem, generate_ex12_problem, generate_ex13_problem, generate_ex14_problem, generate_ex15_problem,
+            generate_ex16_problem, generate_ex17_problem, generate_ex18_problem, generate_ex19_problem, generate_ex20_problem
+        ]
+        
+        for i, generator in enumerate(generators, 1):
+            for level in ["easy", "hard"]:
+                # 15回ずつ生成して検証
+                for _ in range(15):
+                    hint, correct, dummies, correct_patterns, dummy_patterns, pure_noises = generator(level)
+                    
+                    # noise_text を構築する (generate_stage と同じロジック)
+                    noise_count = random.randint(3, 6) if level == "easy" else random.randint(12, 18)
+                    selected_noises = [random.choice(pure_noises) for _ in range(noise_count)]
+                    elements = [correct] + dummies + selected_noises
+                    random.shuffle(elements)
+                    noise_text = " ".join(elements)
+                    words = noise_text.split(" ")
+                    
+                    for pattern in correct_patterns:
+                        compiled = re.compile(pattern)
+                        matched_words = [w for w in words if compiled.search(w)]
+                        
+                        # マッチした単語が correct_string の1つだけであることを確認
+                        self.assertEqual(
+                            len(matched_words), 1,
+                            f"Ex{i} ({level}): Pattern '{pattern}' matched multiple/no words: {matched_words} in noise text: '{noise_text}'"
+                        )
+                        self.assertEqual(
+                            matched_words[0], correct,
+                            f"Ex{i} ({level}): Pattern '{pattern}' matched '{matched_words[0]}' instead of correct_string '{correct}'"
+                        )
+
 if __name__ == "__main__":
     unittest.main()
+
