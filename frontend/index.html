@@ -10,7 +10,7 @@
     <p>This is a minimal frontend placeholder. It will call the backend mock API.</p>
     <pre id="resp"></pre>
     <script>
-      fetch('/api/v1/stages/generate?level=hard')
+      fetch('http://localhost:8000/api/v1/stages/generate?level=hard')
         .then(r => r.json())
         .then(j => { document.getElementById('resp').textContent = JSON.stringify(j, null, 2) })
         .catch(e => { document.getElementById('resp').textContent = String(e) })

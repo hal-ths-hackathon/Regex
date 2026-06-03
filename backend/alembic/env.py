@@ -25,8 +25,11 @@ def run_migrations_offline():
 
 
 def run_migrations_online():
+    section = config.get_section(config.config_ini_section)
+    if not section.get("sqlalchemy.url"):
+        section["sqlalchemy.url"] = os.environ.get("DATABASE_URL", "sqlite:///./test.db")
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
+        section,
         prefix='sqlalchemy.',
         poolclass=pool.NullPool,
     )
