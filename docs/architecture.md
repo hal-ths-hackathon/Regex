@@ -3,7 +3,7 @@
 今週末での最速リリースと、今後の拡張（ランキング等）を両立するため、以下の堅牢な初期基盤を構築する。
 
 ## 1. ディレクトリ構成（モノレポ想定）
-* `/frontend`: React (TS)
+* `/frontend`: React (JS)
 * `/backend`: FastAPI (Python)
 * `docker-compose.yml`
 

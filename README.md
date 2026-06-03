@@ -9,7 +9,7 @@
 * **選べる難易度**: 初心者向けの「3択選択モード」と、実力者向けの「直接入力モード」を搭載。
 
 ## 🛠 技術スタック
-* **Frontend**: React (TypeScript)
+* **Frontend**: React (JavaScript)
 * **Backend**: Python (FastAPI)
 * **Database**: PostgreSQL
 * **Infrastructure**: Docker / Docker Compose
