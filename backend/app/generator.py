@@ -9,153 +9,210 @@ def generate_chars(length: int, chars: str = "abcdefghijklmnopqrstuvwxyz") -> st
     """指定された長さのランダムな英字文字列を生成する"""
     return "".join(random.choice(chars) for _ in range(length))
 
-def generate_zip_code_problem(level: str) -> tuple[str, str, list[str], list[str]]:
-    """郵便番号問題のデータを生成する
-    Returns:
-        hint (str), correct_string (str), dummies (list[str]), correct_patterns (list[str])
-    """
-    # 正解の生成
-    prefix = generate_digits(3)
-    suffix = generate_digits(4)
-    correct = f"{prefix}-{suffix}"
+# --- Ex1 ~ Ex20 の問題生成テンプレート ---
 
-    if level == "hard":
-        hint = "3桁の数字と4桁の数字がハイフンで繋がれたパターンを解除せよ"
-        # Hardは正解に近いダミーを多く用意
-        dummies = [
-            f"{generate_digits(2)}-{generate_digits(5)}",       # 桁ずれ
-            f"{generate_digits(4)}-{generate_digits(3)}",       # 桁ずれ
-            f"{generate_digits(3)}-{generate_digits(3)}",       # 桁不足
-            f"{generate_digits(3)}-{generate_digits(5)}",       # 桁過剰
-            f"{generate_digits(3)}.{generate_digits(4)}",       # 区切り文字違い(.)
-            f"{generate_digits(3)}_{generate_digits(4)}",       # 区切り文字違い(_)
-            f"{generate_digits(2)}{generate_chars(1)}-{generate_digits(4)}",  # 英字混入
-            f"{generate_digits(3)}-{generate_digits(3)}{generate_chars(1)}",  # 末尾英字
-        ]
-    else:
-        hint = "3桁の数字、ハイフン、4桁の数字で構成される郵便番号（例: 123-4567）を解除せよ"
-        # Easyはわかりやすいダミー
-        dummies = [
-            f"{generate_digits(2)}-{generate_digits(3)}",       # 明らかな桁不足
-            f"{generate_digits(4)}-{generate_digits(4)}",       # 前半の桁過剰
-            f"{generate_chars(3)}-{generate_chars(4)}",         # 英字のみ
-            f"{generate_digits(3)}{generate_digits(4)}",        # ハイフンなし
-        ]
-        
-    patterns = [r"^\d{3}-\d{4}$", r"^[0-9]{3}-[0-9]{4}$"]
-    return hint, correct, dummies, patterns
+def generate_ex1_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "文字列 'xyz' にマッチする正規表現を記述しなさい。"
+    correct = "xyz"
+    dummies = ["xy", "yz", "abc", "abz", "xya", "temp"]
+    correct_patterns = [r"xyz"]
+    dummy_patterns = [r"xy", r"yz", r"abc", r"x.z"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
 
-def generate_date_problem(level: str) -> tuple[str, str, list[str], list[str]]:
-    """日付問題のデータを生成する
-    Returns:
-        hint (str), correct_string (str), dummies (list[str]), correct_patterns (list[str])
-    """
-    # 正解の生成
-    year = str(random.randint(1900, 2099))
-    month = f"{random.randint(1, 12):02d}"
-    day = f"{random.randint(1, 28):02d}" # 簡略化のため28日まで
-    correct = f"{year}-{month}-{day}"
+def generate_ex2_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "大文字・小文字を問わず、'xyz' または 'XYZ' にマッチする正規表現を記述しなさい。※大文字小文字無視フラグは使わず、正規表現で対応すること。"
+    correct = random.choice(["xyz", "XYZ"])
+    dummies = ["xy", "YZ", "abc", "XYz", "xYz", "temp"]
+    correct_patterns = [r"(xyz|XYZ)", r"[xX][yY][zZ]"]
+    dummy_patterns = [r"xyz", r"XYZ", r"[a-z]{3}", r"x.z"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
 
-    if level == "hard":
-        hint = "4桁の西暦、ハイフン、2桁の月、ハイフン、2桁の日で構成される日付（YYYY-MM-DD）"
-        dummies = [
-            f"{year}-{random.randint(1, 9):d}-{day}",               # 月が1桁
-            f"{year}-{month}-{random.randint(1, 9):d}",               # 日が1桁
-            f"{random.randint(10, 99):02d}-{month}-{day}",          # 年が2桁
-            f"{year}/{month}/{day}",                                # 区切りが/
-            f"{year}.{month}.{day}",                                # 区切りが.
-            f"{year}-{month}-{random.randint(32, 99):02d}",          # 日の値が異常
-            f"{year}-{random.randint(13, 99):02d}-{day}",          # 月の値が異常
-            f"{year}-{month}a-{day}",                               # 英字混入
-        ]
-    else:
-        hint = "西暦4桁-月2桁-日2桁の形式の日付（例: 2026-06-03）を解除せよ"
-        dummies = [
-            f"{year}/{month}/{day}",                                # 区切りが違う
-            f"{generate_chars(4)}-{generate_chars(2)}-{generate_chars(2)}", # 英字
-            f"{year}{month}{day}",                                  # ハイフンなし
-            f"{random.randint(10, 99):d}-{month}-{day}",            # 年が明らかに短い
-        ]
+def generate_ex3_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "先頭が 'xyz' で始まる文字列にマッチする正規表現を記述しなさい。"
+    correct = "xyz" + generate_chars(2)
+    dummies = ["a" + correct, "abc", "xy", "temp"]
+    correct_patterns = [r"^xyz"]
+    dummy_patterns = [r"xyz", r"xyz$", r"^xy", r"^[a-z]{3}"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
 
-    patterns = [r"^\d{4}-\d{2}-\d{2}$", r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"]
-    return hint, correct, dummies, patterns
+def generate_ex4_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "末尾が 'xyz' で終わる文字列にマッチする正規表現を記述しなさい。"
+    correct = generate_chars(2) + "xyz"
+    dummies = [correct + "a", "abc", "xy", "temp"]
+    correct_patterns = [r"xyz$"]
+    dummy_patterns = [r"xyz", r"^xyz", r"yz$", r"[a-z]{3}$"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
 
-def generate_phone_problem(level: str) -> tuple[str, str, list[str], list[str]]:
-    """携帯電話番号問題のデータを生成する
-    Returns:
-        hint (str), correct_string (str), dummies (list[str]), correct_patterns (list[str])
-    """
-    carrier = random.choice(["090", "080"])
-    part1 = generate_digits(4)
-    part2 = generate_digits(4)
-    correct = f"{carrier}-{part1}-{part2}"
+def generate_ex5_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "文字列 'xyz' と完全に一致する文字列にマッチする正規表現を記述しなさい。"
+    correct = "xyz"
+    dummies = ["axyz", "xyza", "abc", "xy", "temp"]
+    correct_patterns = [r"^xyz$"]
+    dummy_patterns = [r"xyz", r"^xyz", r"xyz$", r"^[a-z]{3}$"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
 
-    if level == "hard":
-        hint = "090または080で始まり、4桁の数字、ハイフン、4桁の数字と続く携帯電話番号パターン"
-        dummies = [
-            f"070-{part1}-{part2}",                                # 070 (始まり違い)
-            f"090-{generate_digits(3)}-{part2}",                   # 桁不足
-            f"080-{part1}-{generate_digits(5)}",                   # 桁過剰
-            f"{carrier}{part1}{part2}",                            # ハイフンなし
-            f"{carrier}.{part1}.{part2}",                            # 区切りが.
-            f"{carrier}-{part1}-{generate_digits(3)}{generate_chars(1)}", # 末尾に英字
-            f"190-{part1}-{part2}",                                # 190 (始まり違い)
-        ]
-    else:
-        hint = "090または080で始まり、ハイフンで区切られた11桁の携帯電話番号（例: 090-1234-5678）"
-        dummies = [
-            f"{carrier}{part1}{part2}",                            # ハイフンなし
-            f"03-{part1}-{part2}",                                 # 市外局番(桁不足)
-            f"abc-defg-hijk",                                      # 全て英字
-        ]
+def generate_ex6_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "'x'で始まり'z'で終わり、真ん中が任意の1文字である3文字のパターンにマッチする正規表現を記述しなさい。"
+    mid = random.choice("abcdefghijklmnopqrstuvwxyz0123456789")
+    correct = f"x{mid}z"
+    dummies = ["xz", "xyza", "abc", "axza", "temp"]
+    correct_patterns = [r"x.z"]
+    dummy_patterns = [r"xyz", r"x[a-z]z", r"x.*z", r"^x.z$"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
 
-    patterns = [r"^0[89]0-\d{4}-\d{4}$", r"^0(80|90)-\d{4}-\d{4}$", r"^0[89]0-[0-9]{4}-[0-9]{4}$"]
-    return hint, correct, dummies, patterns
+def generate_ex7_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "'xyz' の前後にそれぞれ任意の1文字が存在する（計5文字）パターンにマッチする正規表現を記述しなさい。"
+    correct = generate_chars(1) + "xyz" + generate_chars(1)
+    dummies = ["axyz", "xyza", "xyz", "abc", "temp"]
+    correct_patterns = [r".xyz."]
+    dummy_patterns = [r"xyz", r"^.xyz.$", r".*xyz.*", r".{2}xyz"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
 
-def generate_time_problem(level: str) -> tuple[str, str, list[str], list[str]]:
-    """時刻問題のデータを生成する
-    Returns:
-        hint (str), correct_string (str), dummies (list[str]), correct_patterns (list[str])
-    """
-    hour = f"{random.randint(0, 23):02d}"
-    minute = f"{random.randint(0, 59):02d}"
-    correct = f"{hour}:{minute}"
+def generate_ex8_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "文字 'x' がちょうど5回繰り返され、その後に 'yz' が続く文字列にマッチする正規表現を記述しなさい。"
+    correct = "xxxxxyz"
+    dummies = ["xxxxyz", "xxxxxy", "abc", "temp"]
+    correct_patterns = [r"x{5}yz"]
+    dummy_patterns = [r"x{4}yz", r"x+yz", r"x*yz", r"x{5}"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
 
-    if level == "hard":
-        hint = "2桁の時（00-23）と2桁の分（00-59）がコロンで区切られた24時間表記の時刻"
-        dummies = [
-            f"{random.randint(0, 9):d}:{minute}",                  # 時が1桁
-            f"{hour}:{random.randint(0, 9):d}",                  # 分が1桁
-            f"{random.randint(24, 99):02d}:{minute}",              # 時が範囲外
-            f"{hour}:{random.randint(60, 99):02d}",              # 分が範囲外
-            f"{hour}.{minute}",                                    # 区切りが.
-            f"{hour}-{minute}",                                    # 区切りが-
-            f"{hour}:{generate_digits(1)}{generate_chars(1)}",     # 英字混入
-        ]
-    else:
-        hint = "HH:MM 形式の24時間表記の時刻（例: 14:30）を解除せよ"
-        dummies = [
-            f"{hour}{minute}",                                     # コロンなし
-            f"25:00",                                              # 範囲外
-            f"ab:cd",                                              # 英字のみ
-        ]
-
-    patterns = [r"^\d{2}:\d{2}$", r"^[0-9]{2}:[0-9]{2}$", r"^(0\d|1\d|2[0-3]):[0-5]\d$"]
-    return hint, correct, dummies, patterns
-
-def generate_pure_noise(count: int) -> list[str]:
-    """完全なランダムノイズ（英数字や記号）を生成する"""
-    noises = []
-    options = [
-        lambda: generate_chars(random.randint(2, 4)),                      # 英字
-        lambda: generate_digits(random.randint(2, 4)),                     # 数字
-        lambda: f"{generate_chars(1)}{generate_digits(1)}",                # 英数混合
-        lambda: random.choice(["temp", "data", "id", "val", "test", "err"]),# 固定単語
-        lambda: random.choice(["?", "!", "#", "@", "$", "*", "%"]),        # 記号単語
+def generate_ex9_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "先頭が 'x' で、'x' が5回以上8回以下繰り返され、その後に 'yz' が続くパターンにマッチする正規表現を記述しなさい。"
+    correct = ("x" * random.randint(5, 8)) + "yz"
+    dummies = [
+        "x" * 4 + "yz",       # 4個 (過少)
+        "x" * 9 + "yz",       # 9個 (過剰)
+        "a" + "x" * 6 + "yz", # 先頭ではない
+        "abc", "temp"
     ]
-    for _ in range(count):
-        noises.append(random.choice(options)())
-    return noises
+    correct_patterns = [r"^x{5,8}yz"]
+    dummy_patterns = [r"x{5,8}yz", r"^x{5,}yz", r"^x{5,8}", r"^x+yz"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex10_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "'xy' で始まり、3文字目が 'x', 'y', 'z' のいずれかであるパターンにマッチする正規表現を記述しなさい。"
+    correct = "xy" + random.choice(["x", "y", "z"])
+    dummies = ["xya", "xy", "abc", "xyp", "temp"]
+    correct_patterns = [r"xy[xyz]"]
+    dummy_patterns = [r"xy[a-z]", r"xy.", r"xy(x|y)", r"^[xyz]{3}$"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex11_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "任意の半角英小文字1文字にマッチする正規表現を記述しなさい。"
+    correct = random.choice("abcdefghijklmnopqrstuvwxyz")
+    dummies = ["A", "9", "-", "ａ", "temp"] # ａは全角
+    correct_patterns = [r"[a-z]"]
+    dummy_patterns = [r"[a-zA-Z]", r"[A-Z]", r"\w", r"[a-z]{1,}"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex12_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "任意の半角英数字が3文字続くパターンにマッチする正規表現を記述しなさい。"
+    correct = generate_chars(1) + generate_digits(1) + generate_chars(1).upper()
+    dummies = ["aa", "---", "ａａａ", "temp"]
+    correct_patterns = [r"[a-zA-Z0-9]{3}"]
+    dummy_patterns = [r"\w{3}", r"[a-z]{3}", r"[0-9]{3}", r"[a-zA-Z0-9]{2}"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex13_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "任意の数値3桁（全角の数字も許容）にマッチする正規表現を記述しなさい。"
+    correct = random.choice(["000", "１２３", "９９９", "583"])
+    dummies = ["00", "abc", "ーーー", "temp"]
+    correct_patterns = [r"\d{3}"]
+    dummy_patterns = [r"[0-9]{3}", r"\d{2}", r"\d+", r"\d{4}"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex14_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "英単語 'python' が独立して含まれるパターンにマッチする正規表現を記述しなさい（apythonなどは除外）。"
+    correct = "python"
+    # 単語境界のテストのため、前後に英数字をくっつけたダミーを用意
+    dummies = ["apython", "pythona", "python1", "abc", "temp"]
+    correct_patterns = [r"\bpython\b"]
+    dummy_patterns = [r"python", r"^python$", r"\s*python\s*", r"\bpython"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex15_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "'Red', 'Green', 'Blue' のいずれかの単語が3回繰り返されるパターンにマッチする正規表現を記述しなさい。"
+    correct = "".join(random.choice(["Red", "Green", "Blue"]) for _ in range(3))
+    dummies = ["RGB", "Red", "RedRed", "RedGrean", "temp"]
+    correct_patterns = [r"(Red|Green|Blue){3}"]
+    dummy_patterns = [r"(Red|Green|Blue)+", r"[RGB]{3}", r"(Red|Green|Blue){3}$", r"(Red|Green|Blue){2}"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex16_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "'国営' または '国民' の '国' 部分にマッチする正規表現を記述しなさい（'国'単体や'国家'は除外）。※置換を想定した肯定の先読みを利用すること。"
+    correct = "国" + random.choice(["営", "民"])
+    # マッチするのは「国」の部分だけであるため、dummiesには「国」を含まない、または条件に合わないもの
+    dummies = ["国", "国家", "市営", "民", "営", "temp"]
+    correct_patterns = [r"国(?=(営|民))"]
+    dummy_patterns = [r"国(営|民)", r"国", r"(?<=国)(営|民)", r"国(?=(国家|民))"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex17_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "'ラーメン' または 'ソーメン' の 'メン' 部分にマッチする正規表現を記述しなさい（'メン'単体や'タンメン'は除外）。※置換を想定した肯定の後戻りを利用すること。"
+    correct = random.choice(["ラー", "ソー"]) + "メン"
+    # マッチするのは「メン」の部分だけであるため、dummiesには「メン」を含まない、または条件に合わないもの
+    dummies = ["メン", "タンメン", "ソー", "ラー", "サンマーメン", "temp"]
+    correct_patterns = [r"(?<=(ラー|ソー))メン"]
+    dummy_patterns = [r"(ラー|ソー)メン", r"メン", r"(?<=(ラー|ソー))", r"(?<=ラー|ソー)メン"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex18_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "ファイル名チェックで、末尾が '.jpg', '.png', '.gif', '.webp' のいずれかの拡張子で終わるパターンにマッチする正規表現を記述しなさい。"
+    ext = random.choice([".jpg", ".png", ".gif", ".webp"])
+    correct = generate_chars(4) + ext
+    dummies = ["image.jpeg", "image.jpg.", "jpg", "image.jpga", "temp"]
+    correct_patterns = [r"\.(jpg|png|gif|webp)$"]
+    dummy_patterns = [r"(jpg|png|gif|webp)$", r"\.(jpg|png|gif|webp)", r"\.[a-z]{3,4}$", r"\.(jpe?g|png)$"]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex19_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "固定10桁のクラス記号（大文字英字2桁-数値2桁大文字英字1桁-数値3桁、例: IH-12B-111）にマッチする正規表現を記述しなさい。"
+    correct = f"{generate_chars(2).upper()}-{generate_digits(2)}{generate_chars(1).upper()}-{generate_digits(3)}"
+    dummies = [
+        correct.replace("-", ""),                 # ハイフンなし
+        correct.lower(),                          # 小文字
+        correct[:-1] + "A",                       # 末尾が英字
+        correct[1:] + "1",                        # 桁違い
+        "temp"
+    ]
+    correct_patterns = [r"^[A-Z]{2}-[0-9]{2}[A-Z]-[0-9]{3}$", r"^[A-Z]{2}-\d{2}[A-Z]-\d{3}$"]
+    dummy_patterns = [
+        r"^[a-z]{2}-[0-9]{2}[A-Z]-[0-9]{3}$",
+        r"^[A-Z]{2}-[0-9]{3}-[0-9]{3}$",
+        r"^[A-Z]{2}-[0-9]{2}[a-z]-[0-9]{3}$",
+        r"[A-Z]{2}-[0-9]{2}[A-Z]-[0-9]{3}"
+    ]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+def generate_ex20_problem(level: str) -> tuple[str, str, list[str], list[str], list[str]]:
+    hint = "地域(t/o/n)＋校種(h/m/i)＋固定s＋数値5桁で構成される固定8桁の学籍番号（例: ths00000）にマッチする正規表現を記述しなさい。"
+    reg = random.choice("ton")
+    school = random.choice("hmi")
+    correct = f"{reg}{school}s{generate_digits(5)}"
+    dummies = [
+        correct[1:],                          # 7桁 (校種抜け)
+        correct + "0",                        # 9桁 (桁過剰)
+        "ahs" + generate_digits(5),           # 地域違い
+        correct.upper(),                      # 大文字
+        "temp"
+    ]
+    correct_patterns = [r"^[ton][hmi]s[0-9]{5}$", r"^[ton][hmi]s\d{5}$"]
+    dummy_patterns = [
+        r"^[a-z]{3}[0-9]{5}$",
+        r"^[ton][hmi]s[0-9]{4}$",
+        r"[ton][hmi]s[0-9]{5}",
+        r"^[ton][hmi]s[a-z]{5}$"
+    ]
+    return hint, correct, dummies, correct_patterns, dummy_patterns
+
+# --- 汎用ダミーパターン（間違いの選択肢が不足した場合の補完用） ---
+COMMON_DUMMY_PATTERNS = [
+    r"^.*$",
+    r"^abc$",
+    r"[a-z]+",
+    r"\d+",
+    r"^[a-zA-Z0-9]+$"
+]
 
 def generate_stage(level: str = "easy") -> dict:
     """難易度に応じたステージデータを生成する"""
@@ -164,31 +221,57 @@ def generate_stage(level: str = "easy") -> dict:
     if level not in ("easy", "hard"):
         level = "easy"
 
-    # 4つのテンプレートからランダムに1つを選択
+    # Ex1 ~ Ex20 のジェネレーターからランダムに選択
     generators = [
-        generate_zip_code_problem,
-        generate_date_problem,
-        generate_phone_problem,
-        generate_time_problem
+        generate_ex1_problem, generate_ex2_problem, generate_ex3_problem, generate_ex4_problem, generate_ex5_problem,
+        generate_ex6_problem, generate_ex7_problem, generate_ex8_problem, generate_ex9_problem, generate_ex10_problem,
+        generate_ex11_problem, generate_ex12_problem, generate_ex13_problem, generate_ex14_problem, generate_ex15_problem,
+        generate_ex16_problem, generate_ex17_problem, generate_ex18_problem, generate_ex19_problem, generate_ex20_problem
     ]
     generator = random.choice(generators)
-    hint, correct_string, dummies, correct_patterns = generator(level)
+    hint, correct_string, dummies, correct_patterns, dummy_patterns = generator(level)
 
     # 難易度に応じた純粋なノイズ数
     noise_count = random.randint(3, 6) if level == "easy" else random.randint(12, 18)
-    pure_noises = generate_pure_noise(noise_count)
+    pure_noises = [
+        generate_chars(random.randint(2, 4)),                      # 英字
+        generate_digits(random.randint(2, 4)),                     # 数字
+        f"{generate_chars(1)}{generate_digits(1)}",                # 英数混合
+        random.choice(["temp", "data", "id", "val", "test", "err"]),# 固定単語
+        random.choice(["?", "!", "#", "@", "$", "*", "%"]),        # 記号
+    ]
+    # ノイズのプールからランダムにノイズを生成する
+    selected_noises = [random.choice(pure_noises) for _ in range(noise_count)]
 
-    # 全てをマージしてシャッフル
+    # 全てをマージしてシャッフル (noise_textの構築用)
     # correct_string は必ず1つだけ配置する
-    elements = [correct_string] + dummies + pure_noises
+    elements = [correct_string] + dummies + selected_noises
     random.shuffle(elements)
 
     # 空白区切りで結合
     noise_text = " ".join(elements)
 
-    # 4択の選択肢を生成 (正解1つ + ダミー3つをランダム選択してシャッフル)
-    selected_dummies = random.sample(dummies, 3)
-    choices = [correct_string] + selected_dummies
+    # --- 4択の選択肢 (choices) を生成 (すべて正規表現パターン) ---
+    # 1. 正解パターンを1つ選択
+    correct_pat = random.choice(correct_patterns)
+    
+    # 2. ダミーパターンを3つ選択 (ダミーリストから重複なく)
+    unique_dummy_pats = list(set(dummy_patterns))
+    
+    # もしダミーパターンが足りない場合は、汎用ダミーパターンから補充
+    if len(unique_dummy_pats) < 3:
+        needed = 3 - len(unique_dummy_pats)
+        for p in COMMON_DUMMY_PATTERNS:
+            if p not in unique_dummy_pats and p not in correct_patterns:
+                unique_dummy_pats.append(p)
+                needed -= 1
+                if needed == 0:
+                    break
+                    
+    selected_dummies = random.sample(unique_dummy_pats, 3)
+    
+    # 3. マージしてシャッフル
+    choices = [correct_pat] + selected_dummies
     random.shuffle(choices)
 
     return {
