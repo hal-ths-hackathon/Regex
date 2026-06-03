@@ -4,20 +4,20 @@ Issueタイトル: `[Infra](1): 基盤環境と初期設定の構築`
 MVP の実装を最短で進めるには、フロントエンド、バックエンド、DB、マイグレーション、Lint/Format の基盤を最初に揃える必要がある。ここを先に固めることで、実装途中の環境差分や起動不備による手戻りを防ぎ、以後のタスクを 1 タスク 1 Issue で安全に進められる。
 
 ### 実施内容
-- [ ] .gitignore / .dockerignore の作成
-- [ ] docker-compose.yml の作成 (DBボリューム永続化設定を含む)
-- [ ] Dockerfile の作成 (バックエンド/フロントエンド)
-- [ ] .env.example の作成
-- [ ] FastAPI側のCORS許可設定の雛形作成
-- [ ] DBマイグレーションの初期化
-- [ ] リンター/フォーマッターの初期設定ファイル作成
+- [x] .gitignore / .dockerignore の作成
+- [x] docker-compose.yml の作成 (DBボリューム永続化設定を含む)
+- [x] Dockerfile の作成 (バックエンド/フロントエンド)
+- [x] .env.example の作成
+- [x] FastAPI側のCORS許可設定の雛形作成
+- [x] DBマイグレーションの初期化
+- [x] リンター/フォーマッターの初期設定ファイル作成
 
 ---
 
 ※ 初期実装として、`docker-compose.yml`, `backend/app/main.py`（CORS とモックAPI）, `backend/alembic/versions/0001_create_scores_table.py`, `frontend/index.html` と各 Dockerfile/requirements を追加しました。起動手順は `README_INFRA.md` を参照してください。
 
 ### 完了条件
-- [ ] `docker compose up -d` で正常起動し、APIドキュメント等にアクセスできること
+- [x] `docker compose up -d` で正常起動し、APIドキュメント等にアクセスできること
 
 ### 影響範囲
 - フロントエンドの開発環境
