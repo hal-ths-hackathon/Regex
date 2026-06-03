@@ -39,15 +39,15 @@ class TestRegexGameAPI(unittest.TestCase):
         self.assertGreater(len(unique_results), 1, "API should generate random dynamic problems")
 
     def test_correct_string_in_noise_text(self):
-        """correct_string が noise_text の中に含まれていることを確認"""
+        """correct_string が noise_text の中にちょうど1回だけ含まれていることを確認"""
         for level in ["easy", "hard"]:
             for _ in range(5):
                 stage = generate_stage(level)
                 correct = stage["correct_string"]
                 noise = stage["noise_text"]
-                # 空白区切りで分割した単語の中に correct_string が存在することを確認
+                # 空白区切りで分割した単語の中に correct_string がちょうど1回だけ存在することを確認
                 words = noise.split(" ")
-                self.assertIn(correct, words, f"correct_string '{correct}' must be present as a token in noise_text '{noise}'")
+                self.assertEqual(words.count(correct), 1, f"correct_string '{correct}' must be present exactly once in noise_text '{noise}'")
 
     def test_noise_text_length_by_level(self):
         """難易度(level)によってノイズの量が変化しているか確認"""
