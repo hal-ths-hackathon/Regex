@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
@@ -6,6 +6,15 @@ import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [stageData, setStageData] = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/v1/stages/generate?level=hard')
+      .then(res => res.json())
+      .then(data => setStageData(data))
+      .catch(err => setError(err.toString()))
+  }, [])
 
   return (
     <>
@@ -16,10 +25,19 @@ function App() {
           <img src={viteLogo} className="vite" alt="Vite logo" />
         </div>
         <div>
-          <h1>Get started</h1>
+          <h1>Get started (Regex Game)</h1>
           <p>
             Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
           </p>
+          <div style={{ marginTop: '20px', padding: '10px', background: '#222', borderRadius: '8px', textAlign: 'left' }}>
+            <h3>Mock API Connection Test:</h3>
+            {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+            {stageData ? (
+              <pre style={{ fontSize: '12px' }}>{JSON.stringify(stageData, null, 2)}</pre>
+            ) : (
+              !error && <p>Loading mock API data...</p>
+            )}
+          </div>
         </div>
         <button
           type="button"
