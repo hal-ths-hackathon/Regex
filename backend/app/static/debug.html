@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regex Game - Backend Debug Console</title>
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=DotGothic16&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --panel-bg: #151d30;
+      --border-color: #233554;
+      --text-color: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary-color: #64ffda;
+      --primary-hover: #52e0c0;
+      --accent-correct: #10b981;
+      --accent-error: #ef4444;
+      --accent-warning: #f59e0b;
+      --font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-family);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    header {
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    main {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background-color: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .controls-grid {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 0.5rem;
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 0.3rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .radio-group label {
+      padding: 0.5rem 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .radio-group input[type="radio"] {
+      display: none;
+    }
+
+    .radio-group input[type="radio"]:checked + label {
+      background-color: var(--primary-color);
+      color: var(--bg-color);
+      box-shadow: 0 4px 10px rgba(100, 255, 218, 0.2);
+    }
+
+    .btn {
+      background-color: var(--primary-color);
+      color: var(--bg-color);
+      border: none;
+      padding: 0.8rem 1.8rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(100, 255, 218, 0.15);
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 15px rgba(100, 255, 218, 0.25);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .result-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .meta-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .meta-content {
+      font-size: 1.1rem;
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+    }
+
+    .correct-badge {
+      display: inline-block;
+      background-color: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--accent-correct);
+      color: var(--accent-correct);
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .noise-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      background-color: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      padding: 1.2rem;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 1.1rem;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .word {
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      background-color: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    .word.correct {
+      background-color: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent-correct);
+      color: var(--primary-color);
+      font-weight: bold;
+      animation: pulse 2s infinite;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.3); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .accordion {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .accordion-header {
+      background-color: rgba(255, 255, 255, 0.03);
+      padding: 0.8rem 1rem;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .accordion-content {
+      display: none;
+      padding: 1rem;
+      background-color: rgba(0, 0, 0, 0.15);
+      border-top: 1px solid var(--border-color);
+    }
+
+    .accordion.open .accordion-content {
+      display: block;
+    }
+
+    pre {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      color: #38bdf8;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      stroke: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: var(--bg-color);
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Regex Game - Backend Debug</h1>
+    <p>API (<code>GET /api/v1/stages/generate</code>) のレスポンスおよび問題生成ロジックの動作検証用コンソール</p>
+  </header>
+
+  <main>
+    <!-- コントロールカード -->
+    <div class="card">
+      <div class="controls-grid">
+        <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+          <span class="meta-title">Difficulty (難易度)</span>
+          <div class="radio-group">
+            <input type="radio" id="level-easy" name="level" value="easy" checked>
+            <label for="level-easy">Easy</label>
+            
+            <input type="radio" id="level-hard" name="level" value="hard">
+            <label for="level-hard">Hard</label>
+          </div>
+        </div>
+        
+        <button id="btn-fetch" class="btn">
+          <span id="btn-spinner" class="loading-spinner hidden"></span>
+          <span id="btn-text">問題を生成する</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 結果カード -->
+    <div id="card-result" class="card hidden">
+      <div class="result-section">
+        
+        <div class="meta-item">
+          <div class="meta-title">Stage ID</div>
+          <div id="val-stage-id" class="meta-content" style="font-family: monospace; font-size: 0.9rem;"></div>
+        </div>
+
+        <div class="meta-item">
+          <div class="meta-title">Hint (ヒント)</div>
+          <div id="val-hint" class="meta-content"></div>
+        </div>
+
+        <div class="meta-item">
+          <div class="meta-title">Correct String (正解の正則表現対象文字列)</div>
+          <div id="val-correct" class="meta-content correct-badge"></div>
+        </div>
+
+        <div class="meta-item">
+          <div class="meta-title">Noise Text (ハイライト検証 - 正解は緑色)</div>
+          <div id="val-noise-container" class="noise-container"></div>
+        </div>
+
+        <!-- アコーディオン: 生JSON -->
+        <div class="accordion" id="json-accordion">
+          <div class="accordion-header" id="accordion-toggle">
+            <span>Raw JSON Response</span>
+            <span id="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-content">
+            <pre><code id="val-json"></code></pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 未読み込み時のプレースホルダー -->
+    <div id="card-placeholder" class="card empty-state">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+      <p>「問題を生成する」ボタンを押すと、バックエンドAPIから取得したデータがここに表示されます。</p>
+    </div>
+  </main>
+
+  <script>
+    const btnFetch = document.getElementById('btn-fetch');
+    const btnText = document.getElementById('btn-text');
+    const btnSpinner = document.getElementById('btn-spinner');
+    
+    const cardResult = document.getElementById('card-result');
+    const cardPlaceholder = document.getElementById('card-placeholder');
+    
+    const valStageId = document.getElementById('val-stage-id');
+    const valHint = document.getElementById('val-hint');
+    const valCorrect = document.getElementById('val-correct');
+    const valNoiseContainer = document.getElementById('val-noise-container');
+    const valJson = document.getElementById('val-json');
+    
+    const accordion = document.getElementById('json-accordion');
+    const accordionToggle = document.getElementById('accordion-toggle');
+    const accordionArrow = document.getElementById('accordion-arrow');
+
+    // 生JSONのアコーディオン切り替え
+    accordionToggle.addEventListener('click', () => {
+      accordion.classList.toggle('open');
+      accordionArrow.textContent = accordion.classList.contains('open') ? '▲' : '▼';
+    });
+
+    // APIから問題を取得する関数
+    btnFetch.addEventListener('click', async () => {
+      const level = document.querySelector('input[name="level"]:checked').value;
+      
+      // ローディング状態開始
+      btnFetch.disabled = true;
+      btnSpinner.classList.remove('hidden');
+      btnText.textContent = '生成中...';
+      
+      try {
+        const response = await fetch(`/api/v1/stages/generate?level=${level}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        renderResult(data);
+      } catch (error) {
+        console.error('Fetch error:', error);
+        alert('問題の取得に失敗しました。バックエンドコンテナの起動状態とポートを確認してください。\nError: ' + error.message);
+      } finally {
+        // ローディング状態終了
+        btnFetch.disabled = false;
+        btnSpinner.classList.add('hidden');
+        btnText.textContent = '問題を生成する';
+      }
+    });
+
+    // 結果を描画する関数
+    function renderResult(data) {
+      valStageId.textContent = data.stage_id;
+      valHint.textContent = data.hint;
+      valCorrect.textContent = data.correct_string;
+      
+      // noise_textを単語に分解してハイライト
+      valNoiseContainer.innerHTML = '';
+      const correctString = data.correct_string;
+      const noiseText = data.noise_text;
+      
+      // 空白で分解
+      const words = noiseText.split(' ');
+      
+      words.forEach(word => {
+        const span = document.createElement('span');
+        span.className = 'word';
+        span.textContent = word;
+        
+        // 正解文字列と完全一致する場合はハイライト
+        if (word === correctString) {
+          span.classList.add('correct');
+        }
+        
+        valNoiseContainer.appendChild(span);
+        // 単語の間にわずかなスペースを入れるためにテキストノードを追加
+        valNoiseContainer.appendChild(document.createTextNode(' '));
+      });
+      
+      // 生JSONを表示
+      valJson.textContent = JSON.stringify(data, null, 2);
+      
+      // 表示切り替え
+      cardPlaceholder.classList.add('hidden');
+      cardResult.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

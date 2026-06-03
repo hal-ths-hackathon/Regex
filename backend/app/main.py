@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.generator import generate_stage
 
@@ -26,3 +28,11 @@ def generate(level: str = "easy"):
 @app.get("/healthz")
 def health():
     return {"status": "ok"}
+
+
+# Mount static files and register debug page endpoint
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+@app.get("/debug")
+def debug():
+    return FileResponse("app/static/debug.html")
