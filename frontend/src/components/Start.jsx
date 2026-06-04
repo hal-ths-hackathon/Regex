@@ -12,7 +12,11 @@ function Start() {
         <div className={styles.logoArea}>
           <div className={styles.logoWrapper}>
             <img className={styles.kigouImage} src={kigouImage} alt="kigou" />
-            <h2 className={styles.title}>Regex</h2>
+            <div className={styles.titleBlock}>
+              <h2 className={styles.title}>Regex</h2>
+              <p className={styles.subtitle}>- レジェックス -</p>
+              <p className={styles.description}>記憶の力で、爆破を阻止しよう</p>
+            </div>
           </div>
         </div>
       </div>
