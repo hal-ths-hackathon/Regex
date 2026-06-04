@@ -1,13 +1,14 @@
 import styles from './Start.module.css'
-import warningImage from '../assets/warning.png'
 import kigouImage from '../assets/kigou.png'
+
+const warningText = Array(20).fill('WARNING').join('')
 
 function Start() {
   return (
     <div className={styles.wrapper}>
       <div className={styles.topArea}>
         <div className={styles.top}>
-          <img className={styles.warningImage} src={warningImage} alt="warning" />
+          <span className={styles.warningText}>{warningText}</span>
         </div>
         <div className={styles.logoArea}>
           <div className={styles.logoWrapper}>
@@ -21,7 +22,7 @@ function Start() {
         </div>
       </div>
       <div className={styles.bottom}>
-        <img className={styles.warningImage} src={warningImage} alt="warning" />
+        <span className={styles.warningText}>{warningText}</span>
       </div>
     </div>
   )
