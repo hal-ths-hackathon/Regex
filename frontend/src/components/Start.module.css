@@ -56,9 +56,10 @@
 
 .logoArea {
     width: 100%;
+    flex: 1;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     padding: 0;
     margin-top: 0;
 }
@@ -68,27 +69,117 @@
     display: inline-flex;
     justify-content: center;
     align-items: center;
+    max-height: 100%;
 }
 
 .kigouImage,
 .warningImage {
     max-width: 100%;
+    max-height: 100%;
     height: auto;
     display: block;
 }
 
 .titleBlock {
     position: absolute;
-    top: 80%;
+    top: 0;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, 0);
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
+.controlsBlock {
+    margin-top: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.difficultyContainer {
+    display: flex;
+    gap: 15px;
+}
+
+.diffButton {
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 2px solid #444;
+    color: #888;
+    padding: 10px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    letter-spacing: 2px;
+    font-family: "DotGothic16", sans-serif;
+}
+
+.diffButton:hover {
+    border-color: #888;
+    color: #ccc;
+}
+
+.activeEasy {
+    border-color: #10b981;
+    color: #10b981;
+    text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+    box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.2), 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.activeHard {
+    border-color: #ef4444;
+    color: #ef4444;
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+    box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.2), 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.startButton {
+    background-color: #d32f2f;
+    border: 3px solid #ff5252;
+    color: white;
+    padding: 16px 40px;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 15px rgba(211, 47, 47, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+    font-family: "DotGothic16", sans-serif;
+    animation: pulseStart 2s infinite;
+}
+
+.startButton:hover {
+    background-color: #f44336;
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(244, 67, 54, 0.8), inset 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+.startButton:active {
+    transform: scale(0.98);
+}
+
+@keyframes pulseStart {
+    0% {
+        box-shadow: 0 0 15px rgba(211, 47, 47, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(211, 47, 47, 0.9);
+    }
+
+    100% {
+        box-shadow: 0 0 15px rgba(211, 47, 47, 0.5);
+    }
+}
+
 .title {
-    margin: 50px 0 0 0;
+    margin: 10px 0 0 0;
     text-align: center;
     color: #ffffff;
     text-shadow: 0 0 8px rgba(0, 0, 0, 0.75);
@@ -121,6 +212,7 @@
     0% {
         transform: translate(-50%, -50%);
     }
+
     100% {
         transform: translate(0, -50%);
     }
@@ -130,6 +222,7 @@
     0% {
         transform: translate(0, -50%);
     }
+
     100% {
         transform: translate(-50%, -50%);
     }
