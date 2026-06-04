@@ -2,14 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+import os
 
 from app.generator import generate_stage
 
 app = FastAPI(title="Regex Game API")
 
-origins = [
-    "http://localhost:3000",
-]
+# CORS: 環境変数 CORS_ORIGINS からカンマ区切りで読み取り（デフォルトは開発用 localhost）
+_cors_env = os.environ.get("CORS_ORIGINS", "http://localhost:3000")
+origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,

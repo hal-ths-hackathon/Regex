@@ -1,0 +1,43 @@
+# =============================================================================
+# docker-compose.prod.yml — 本番環境用オーバーライド
+# =============================================================================
+# 使い方:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+#     --env-file .env.production up -d
+#
+# このファイルは docker-compose.yml の上に重ねて適用される。
+# - 全サービスの ports を無効化（ホストへのポート公開を遮断）
+# - cloudflared コンテナを追加し、Cloudflare Tunnel 経由のみでアクセス可能にする
+# - 開発用のボリュームマウント（ホットリロード）を無効化
+# =============================================================================
+
+services:
+  # --- Database ---
+  db:
+    ports: !reset []
+    restart: unless-stopped
+
+  # --- Backend API ---
+  backend:
+    ports: !reset []
+    volumes: !reset []
+    restart: unless-stopped
+    environment:
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://<YOUR_DOMAIN>}
+
+  # --- Frontend ---
+  frontend:
+    ports: !reset []
+    volumes: !reset []
+    restart: unless-stopped
+
+  # --- Cloudflare Tunnel ---
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - backend
+      - frontend
