@@ -170,27 +170,14 @@ function Game({ level, onBackToTitle }) {
     setSubmitMatches(matchesStr)
     setSubmitMessage(errMsg)
 
+    // Calculate time adjustment
+    const calculatedNextTime = isCorrect ? timeLeft + 15 : Math.max(0, timeLeft - 10)
+
     if (isCorrect) {
       setCorrectAttempts(prev => prev + 1)
-      const newClearedCount = stagesCleared + 1
-      setStagesCleared(newClearedCount)
-
-      // Time bonus
-      setTimeLeft(prev => prev + 15)
-
-      // Wait a short moment (e.g. 1000ms) to show SUCCESS badge before loading next stage or clearing game
-      setTimeout(() => {
-        if (newClearedCount >= STAGES_TO_CLEAR) {
-          if (timerRef.current) clearInterval(timerRef.current)
-          setGameState('CLEAR')
-        } else {
-          loadNewStage()
-        }
-      }, 1000)
+      setTimeLeft(calculatedNextTime)
     } else {
-      // Penalty for wrong submit
-      setTimeLeft(prev => Math.max(0, prev - 10))
-      
+      setTimeLeft(calculatedNextTime)
       // Alert flash error visual
       const consoleBox = document.getElementById('consoleBox')
       if (consoleBox) {
@@ -198,6 +185,24 @@ function Game({ level, onBackToTitle }) {
         setTimeout(() => consoleBox.classList.remove(styles.flashRed), 400)
       }
     }
+
+    const newClearedCount = stagesCleared + 1
+    setStagesCleared(newClearedCount)
+
+    // Wait a short moment (1500ms) to show feedback badge before advancing or ending game
+    setTimeout(() => {
+      if (calculatedNextTime <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current)
+        setGameState('GAMEOVER')
+      } else {
+        if (newClearedCount >= STAGES_TO_CLEAR) {
+          if (timerRef.current) clearInterval(timerRef.current)
+          setGameState('CLEAR')
+        } else {
+          loadNewStage()
+        }
+      }
+    }, 1500)
   }
 
   // Restart Game
@@ -382,6 +387,7 @@ function Game({ level, onBackToTitle }) {
                   type="button" 
                   className={`${styles.choiceBtn} ${regexInput === choice ? styles.choiceBtnActive : ''}`}
                   onClick={() => handleChoiceClick(choice)}
+                  disabled={loading || submitStatus !== 'WAITING'}
                 >
                   <span className={styles.choiceCode}>{choice}</span>
                 </button>
@@ -406,6 +412,7 @@ function Game({ level, onBackToTitle }) {
                   value={regexInput}
                   onChange={(e) => handleInputChange(e.target.value)}
                   placeholder="正規表現を入力してください (例: ^\d{3}-\d{4}$)"
+                  disabled={loading || submitStatus !== 'WAITING'}
                 />
                 <span className={styles.regexSuffix}>/gm</span>
               </div>
@@ -430,7 +437,7 @@ function Game({ level, onBackToTitle }) {
                   type="button" 
                   className={styles.skipBtn}
                   onClick={loadNewStage}
-                  disabled={loading}
+                  disabled={loading || submitStatus !== 'WAITING'}
                 >
                   SKIP MODULE (-10s)
                 </button>
@@ -438,7 +445,7 @@ function Game({ level, onBackToTitle }) {
                   type="button" 
                   className={`${styles.submitBtn} ${submitStatus === 'SUCCESS' ? styles.submitBtnReady : ''}`}
                   onClick={handleSubmit}
-                  disabled={loading || !regexInput}
+                  disabled={loading || !regexInput || submitStatus !== 'WAITING'}
                 >
                   INJECT DECRYPTION KEY / 送信
                 </button>
