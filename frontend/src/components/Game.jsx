@@ -376,24 +376,26 @@ function Game({ level, onBackToTitle }) {
           </div>
 
           {/* Choices Grid */}
-          <div className={styles.choicesCard}>
-            <div className={styles.cardHeader}>
-              <span className={styles.cardTitle}>RECOMMENDED PATTERNS (選択肢 - クリックで代入)</span>
+          {level === 'easy' && (
+            <div className={styles.choicesCard}>
+              <div className={styles.cardHeader}>
+                <span className={styles.cardTitle}>RECOMMENDED PATTERNS (選択肢 - クリックで代入)</span>
+              </div>
+              <div className={styles.choicesGrid}>
+                {stageData?.choices.map((choice, index) => (
+                  <button 
+                    key={index} 
+                    type="button" 
+                    className={`${styles.choiceBtn} ${regexInput === choice ? styles.choiceBtnActive : ''}`}
+                    onClick={() => handleChoiceClick(choice)}
+                    disabled={loading || submitStatus !== 'WAITING'}
+                  >
+                    <span className={styles.choiceCode}>{choice}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className={styles.choicesGrid}>
-              {stageData?.choices.map((choice, index) => (
-                <button 
-                  key={index} 
-                  type="button" 
-                  className={`${styles.choiceBtn} ${regexInput === choice ? styles.choiceBtnActive : ''}`}
-                  onClick={() => handleChoiceClick(choice)}
-                  disabled={loading || submitStatus !== 'WAITING'}
-                >
-                  <span className={styles.choiceCode}>{choice}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* Regex Input & Simulation Console */}
           <div id="consoleBox" className={styles.consoleCard}>
@@ -406,14 +408,20 @@ function Game({ level, onBackToTitle }) {
             <div className={styles.consoleBody}>
               <div className={styles.inputWrapper}>
                 <span className={styles.regexPrefix}>/</span>
-                <input 
-                  type="text" 
-                  className={styles.regexInputField}
-                  value={regexInput}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  placeholder="正規表現を入力してください (例: ^\d{3}-\d{4}$)"
-                  disabled={loading || submitStatus !== 'WAITING'}
-                />
+                {level === 'easy' ? (
+                  <span className={`${styles.selectedRegexDisplay} ${!regexInput ? styles.placeholderText : ''}`}>
+                    {regexInput || '選択肢をクリックして選んでください'}
+                  </span>
+                ) : (
+                  <input 
+                    type="text" 
+                    className={styles.regexInputField}
+                    value={regexInput}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    placeholder="正規表現を入力してください (例: ^\d{3}-\d{4}$)"
+                    disabled={loading || submitStatus !== 'WAITING'}
+                  />
+                )}
                 <span className={styles.regexSuffix}>/gm</span>
               </div>
 
