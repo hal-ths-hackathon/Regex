@@ -12,6 +12,9 @@ function Game({ level, onBackToTitle }) {
   const [loading, setLoading] = useState(false)
   const [totalAttempts, setTotalAttempts] = useState(0)
   const [correctAttempts, setCorrectAttempts] = useState(0)
+  const [submitStatus, setSubmitStatus] = useState('WAITING')
+  const [submitMessage, setSubmitMessage] = useState('')
+  const [submitMatches, setSubmitMatches] = useState('-')
 
   const timerRef = useRef(null)
   const usedStageIdsRef = useRef(new Set())
@@ -22,6 +25,9 @@ function Game({ level, onBackToTitle }) {
   const loadNewStage = useCallback(async () => {
     setLoading(true)
     setRegexInput('')
+    setSubmitStatus('WAITING')
+    setSubmitMessage('')
+    setSubmitMatches('-')
 
     try {
       // Try to fetch from backend
@@ -79,26 +85,46 @@ function Game({ level, onBackToTitle }) {
     }
   }, [loadNewStage])
 
-  // Derive simulator values during render
-  let derivedSimStatus = 'WAITING'
-  let derivedSimMatches = '-'
-  let derivedErrorMessage = ''
-  let derivedIsCorrect = false
+  // Handle Input text changes
+  const handleInputChange = (value) => {
+    setRegexInput(value)
+    setSubmitStatus('WAITING')
+    setSubmitMessage('')
+    setSubmitMatches('-')
+  }
 
-  if (stageData && regexInput.trim()) {
+  // Handle Choice Select
+  const handleChoiceClick = (choice) => {
+    setRegexInput(choice)
+    setSubmitStatus('WAITING')
+    setSubmitMessage('')
+    setSubmitMatches('-')
+  }
+
+  // Handle Submission
+  const handleSubmit = () => {
+    if (loading || !stageData || !regexInput.trim()) return
+
+    setTotalAttempts(prev => prev + 1)
+    
+    // Evaluation Logic
+    let isCorrect = false
+    let matchesStr
+    let status
+    let errMsg = ''
+
     try {
       const patternText = regexInput.trim()
-      // Evaluate matching behavior against noise_text
       const regex = new RegExp(patternText, 'gm')
       const noiseText = stageData.noise_text
       const correctString = stageData.correct_string
 
-      // 1. Get all matches in noise text
+      // 1. Get matches
       const matches = [...noiseText.matchAll(regex)].map(m => m[0])
       if (matches.length > 0) {
-        derivedSimMatches = matches.join(', ')
+        matchesStr = matches.join(', ')
       } else {
-        derivedSimMatches = '(マッチなし)'
+        matchesStr = '(マッチなし)'
       }
 
       // 2. Evaluate correct/incorrect lines matching
@@ -123,35 +149,28 @@ function Game({ level, onBackToTitle }) {
       const isMatchCorrect = matchedCorrectLine && !matchedIncorrectLine
 
       if (isPatternCorrect && isMatchCorrect) {
-        derivedSimStatus = 'SUCCESS'
-        derivedErrorMessage = ''
-        derivedIsCorrect = true
+        status = 'SUCCESS'
+        isCorrect = true
       } else if (isMatchCorrect && !isPatternCorrect) {
-        derivedSimStatus = 'CHEAT_PREVENTED'
-        derivedErrorMessage = 'マッチ結果は正しいですが、問題の意図する正規表現パターンではありません。'
-        derivedIsCorrect = false
+        status = 'CHEAT_PREVENTED'
+        errMsg = 'マッチ結果は正しいですが、問題の意図する正規表現パターンではありません。'
       } else {
-        derivedSimStatus = 'FAILED'
-        derivedErrorMessage = matchedIncorrectLine ? 'ノイズ行に誤マッチしています。' : 'ターゲット行にマッチしていません。'
-        derivedIsCorrect = false
+        status = 'FAILED'
+        errMsg = matchedIncorrectLine ? 'ノイズ行に誤マッチしています。' : 'ターゲット行にマッチしていません。'
       }
 
     } catch (err) {
-      derivedSimStatus = 'SYNTAX ERROR'
-      derivedSimMatches = '-'
-      derivedErrorMessage = err.message
-      derivedIsCorrect = false
+      status = 'SYNTAX_ERROR'
+      matchesStr = '-'
+      errMsg = err.message
     }
-  }
 
-  // Handle Submission
-  const handleSubmit = () => {
-    if (loading || !stageData) return
+    // Set states
+    setSubmitStatus(status)
+    setSubmitMatches(matchesStr)
+    setSubmitMessage(errMsg)
 
-    setTotalAttempts(prev => prev + 1)
-    
-    if (derivedIsCorrect) {
-      // Clear current stage
+    if (isCorrect) {
       setCorrectAttempts(prev => prev + 1)
       const newClearedCount = stagesCleared + 1
       setStagesCleared(newClearedCount)
@@ -159,16 +178,19 @@ function Game({ level, onBackToTitle }) {
       // Time bonus
       setTimeLeft(prev => prev + 15)
 
-      if (newClearedCount >= STAGES_TO_CLEAR) {
-        if (timerRef.current) clearInterval(timerRef.current)
-        setGameState('CLEAR')
-      } else {
-        // Load next stage
-        loadNewStage()
-      }
+      // Wait a short moment (e.g. 1000ms) to show SUCCESS badge before loading next stage or clearing game
+      setTimeout(() => {
+        if (newClearedCount >= STAGES_TO_CLEAR) {
+          if (timerRef.current) clearInterval(timerRef.current)
+          setGameState('CLEAR')
+        } else {
+          loadNewStage()
+        }
+      }, 1000)
     } else {
       // Penalty for wrong submit
       setTimeLeft(prev => Math.max(0, prev - 10))
+      
       // Alert flash error visual
       const consoleBox = document.getElementById('consoleBox')
       if (consoleBox) {
@@ -176,11 +198,6 @@ function Game({ level, onBackToTitle }) {
         setTimeout(() => consoleBox.classList.remove(styles.flashRed), 400)
       }
     }
-  }
-
-  // Handle Choice Select
-  const handleChoiceClick = (choice) => {
-    setRegexInput(choice)
   }
 
   // Restart Game
@@ -191,6 +208,9 @@ function Game({ level, onBackToTitle }) {
     usedStageIdsRef.current.clear()
     setTotalAttempts(0)
     setCorrectAttempts(0)
+    setSubmitStatus('WAITING')
+    setSubmitMessage('')
+    setSubmitMatches('-')
     loadNewStage()
     // Restart timer
     if (timerRef.current) clearInterval(timerRef.current)
@@ -373,8 +393,8 @@ function Game({ level, onBackToTitle }) {
           <div id="consoleBox" className={styles.consoleCard}>
             <div className={styles.cardHeader}>
               <span className={styles.cardTitle}>REGEX INJECTOR CONSOLE</span>
-              <span className={`${styles.simBadge} ${styles['status_' + derivedSimStatus]}`}>
-                {derivedSimStatus.replace('_', ' ')}
+              <span className={`${styles.simBadge} ${styles['status_' + submitStatus]}`}>
+                {submitStatus.replace('_', ' ')}
               </span>
             </div>
             <div className={styles.consoleBody}>
@@ -384,7 +404,7 @@ function Game({ level, onBackToTitle }) {
                   type="text" 
                   className={styles.regexInputField}
                   value={regexInput}
-                  onChange={(e) => setRegexInput(e.target.value)}
+                  onChange={(e) => handleInputChange(e.target.value)}
                   placeholder="正規表現を入力してください (例: ^\d{3}-\d{4}$)"
                 />
                 <span className={styles.regexSuffix}>/gm</span>
@@ -394,12 +414,12 @@ function Game({ level, onBackToTitle }) {
               <div className={styles.statusDetails}>
                 <div className={styles.matchesLine}>
                   <span className={styles.consoleLabel}>MATCHED:</span>
-                  <span className={styles.consoleValue}>{derivedSimMatches}</span>
+                  <span className={styles.consoleValue}>{submitMatches}</span>
                 </div>
-                {derivedErrorMessage && (
+                {submitMessage && (
                   <div className={styles.errorLine}>
                     <span className={styles.errorLabel}>DIAGNOSTICS:</span>
-                    <span className={styles.errorText}>{derivedErrorMessage}</span>
+                    <span className={styles.errorText}>{submitMessage}</span>
                   </div>
                 )}
               </div>
@@ -416,7 +436,7 @@ function Game({ level, onBackToTitle }) {
                 </button>
                 <button 
                   type="button" 
-                  className={`${styles.submitBtn} ${derivedIsCorrect ? styles.submitBtnReady : ''}`}
+                  className={`${styles.submitBtn} ${submitStatus === 'SUCCESS' ? styles.submitBtnReady : ''}`}
                   onClick={handleSubmit}
                   disabled={loading || !regexInput}
                 >
