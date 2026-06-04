@@ -1,14 +1,17 @@
 import styles from './Start.module.css'
 import kigouImage from '../assets/kigou.png'
 
-const warningText = Array(20).fill('WARNING').join('')
+const warningText = Array(30).fill('WARNING').join(' ')
 
 function Start() {
   return (
     <div className={styles.wrapper}>
       <div className={styles.topArea}>
         <div className={styles.top}>
-          <span className={styles.warningText}>{warningText}</span>
+          <div className={`${styles.warningRow} ${styles.warningTop}`}>
+            <span className={styles.warningText}>{warningText}</span>
+            <span className={styles.warningText}>{warningText}</span>
+          </div>
         </div>
         <div className={styles.logoArea}>
           <div className={styles.logoWrapper}>
@@ -22,7 +25,10 @@ function Start() {
         </div>
       </div>
       <div className={styles.bottom}>
-        <span className={styles.warningText}>{warningText}</span>
+        <div className={`${styles.warningRow} ${styles.warningBottom}`}>
+          <span className={styles.warningText}>{warningText}</span>
+          <span className={styles.warningText}>{warningText}</span>
+        </div>
       </div>
     </div>
   )
