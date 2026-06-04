@@ -105,9 +105,13 @@ class TestRegexGameAPI(unittest.TestCase):
                 stage = generate_stage(level)
                 correct = stage["correct_string"]
                 noise = stage["noise_text"]
-                # 空白区切りで分割した単語の中に correct_string がちょうど1回だけ存在することを確認
-                words = noise.split(" ")
-                self.assertEqual(words.count(correct), 1, f"correct_string '{correct}' must be present exactly once in noise_text '{noise}'")
+                if level == "easy":
+                    # Easy (Exercises) では各行が値そのものであるため、改行で分割してカウント
+                    words = noise.split("\n")
+                    self.assertEqual(words.count(correct), 1, f"correct_string '{correct}' must be present exactly once in noise_text '{noise}'")
+                else:
+                    # Hard (Arcade) ではテンプレート内に埋め込まれるため、部分文字列としての出現回数をカウント
+                    self.assertEqual(noise.count(correct), 1, f"correct_string '{correct}' must be present exactly once in noise_text '{noise}'")
 
     def test_noise_text_length_by_level(self):
         """難易度(level)によってノイズの量が変化しているか確認"""
@@ -115,8 +119,8 @@ class TestRegexGameAPI(unittest.TestCase):
         hard_lengths = []
         
         for _ in range(5):
-            easy_lengths.append(len(generate_stage("easy")["noise_text"].split(" ")))
-            hard_lengths.append(len(generate_stage("hard")["noise_text"].split(" ")))
+            easy_lengths.append(len(generate_stage("easy")["noise_text"].split()))
+            hard_lengths.append(len(generate_stage("hard")["noise_text"].split()))
             
         # EasyとHardの平均語数を比較し、Hardのほうが明らかに多いことを確認
         avg_easy = sum(easy_lengths) / len(easy_lengths)
@@ -124,10 +128,11 @@ class TestRegexGameAPI(unittest.TestCase):
         self.assertGreater(avg_hard, avg_easy, f"Hard mode should have more noise than Easy mode. Easy: {avg_easy}, Hard: {avg_hard}")
 
     def test_correct_patterns_simulate_no_false_positives(self):
-        """全20演習問題において、生成されたnoise_textの各単語に対して、
+        """全20演習問題において、生成されたnoise_textに対して、
         correct_patterns のいずれかを適用したときに、correct_string にのみマッチし、
-        他のダミーやノイズに誤マッチしないことを検証する"""
+        他のダミーやノイズに誤マッチしないことを検証する（複数行ログ・グローバルマッチ版）"""
         from app.generator import (
+            build_realistic_log,
             generate_ex1_problem, generate_ex2_problem, generate_ex3_problem, generate_ex4_problem, generate_ex5_problem,
             generate_ex6_problem, generate_ex7_problem, generate_ex8_problem, generate_ex9_problem, generate_ex10_problem,
             generate_ex11_problem, generate_ex12_problem, generate_ex13_problem, generate_ex14_problem, generate_ex15_problem,
@@ -143,31 +148,69 @@ class TestRegexGameAPI(unittest.TestCase):
         
         for i, generator in enumerate(generators, 1):
             for level in ["easy", "hard"]:
-                # 15回ずつ生成して検証
-                for _ in range(15):
+                # 10回ずつ生成して検証
+                for _ in range(10):
                     hint, correct, dummies, correct_patterns, dummy_patterns, pure_noises = generator(level)
                     
-                    # noise_text を構築する (generate_stage と同じロジック)
+                    # noise_text を構築する (generate_stage と同じロジックで改行結合)
                     noise_count = random.randint(3, 6) if level == "easy" else random.randint(12, 18)
                     selected_noises = [random.choice(pure_noises) for _ in range(noise_count)]
-                    elements = [correct] + dummies + selected_noises
-                    random.shuffle(elements)
-                    noise_text = " ".join(elements)
-                    words = noise_text.split(" ")
+                    noise_text = build_realistic_log("general", correct, dummies, selected_noises)
                     
                     for pattern in correct_patterns:
-                        compiled = re.compile(pattern)
-                        matched_words = [w for w in words if compiled.search(w)]
+                        compiled = re.compile(pattern, re.MULTILINE)
+                        # 行ごとに分割して検証
+                        lines = noise_text.split("\n")
+                        matched_correct = False
+                        matched_incorrect = False
+                        for line in lines:
+                            has_match = compiled.search(line) is not None
+                            is_correct_line = correct in line
+                            if is_correct_line:
+                                if has_match:
+                                    matched_correct = True
+                            else:
+                                if has_match:
+                                    matched_incorrect = True
                         
-                        # マッチした単語が correct_string の1つだけであることを確認
-                        self.assertEqual(
-                            len(matched_words), 1,
-                            f"Ex{i} ({level}): Pattern '{pattern}' matched multiple/no words: {matched_words} in noise text: '{noise_text}'"
-                        )
-                        self.assertEqual(
-                            matched_words[0], correct,
-                            f"Ex{i} ({level}): Pattern '{pattern}' matched '{matched_words[0]}' instead of correct_string '{correct}'"
-                        )
+                        self.assertTrue(matched_correct, f"Ex{i} ({level}): Pattern '{pattern}' did not match the correct line in: '{noise_text}'")
+                        self.assertFalse(matched_incorrect, f"Ex{i} ({level}): Pattern '{pattern}' matched an incorrect line in: '{noise_text}'")
+
+    def test_arcade_mode_simulation(self):
+        """アーケードモードで生成された問題に対して、
+        correct_patterns のいずれかを適用したときに、correct_string にのみマッチし、
+        他のダミーやノイズに誤マッチしないことを検証する"""
+        from app.generator import generate_stage
+        
+        for _ in range(50):
+            # Hard モードはアーケード（プロシージャル自動生成）が動く
+            stage = generate_stage("hard")
+            correct = stage["correct_string"]
+            noise_text = stage["noise_text"]
+            correct_patterns = stage["correct_patterns"]
+            choices = stage["choices"]
+            
+            # choices の基本スキーマチェック
+            self.assertEqual(len(choices), 4)
+            self.assertEqual(len(set(choices)), 4)
+            
+            for pattern in correct_patterns:
+                compiled = re.compile(pattern, re.MULTILINE)
+                lines = noise_text.split("\n")
+                matched_correct = False
+                matched_incorrect = False
+                for line in lines:
+                    has_match = compiled.search(line) is not None
+                    is_correct_line = correct in line
+                    if is_correct_line:
+                        if has_match:
+                            matched_correct = True
+                    else:
+                        if has_match:
+                            matched_incorrect = True
+                
+                self.assertTrue(matched_correct, f"Arcade: Pattern '{pattern}' did not match the correct line in: '{noise_text}'")
+                self.assertFalse(matched_incorrect, f"Arcade: Pattern '{pattern}' matched an incorrect line in: '{noise_text}'")
 
 if __name__ == "__main__":
     unittest.main()

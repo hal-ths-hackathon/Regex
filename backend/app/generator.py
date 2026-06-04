@@ -1,5 +1,7 @@
 import random
 from uuid import uuid4
+from datetime import datetime
+
 
 def generate_digits(length: int) -> str:
     """指定された長さのランダムな数字文字列を生成する"""
@@ -8,6 +10,67 @@ def generate_digits(length: int) -> str:
 def generate_chars(length: int, chars: str = "abcdefghijklmnopqrstuvwxyz") -> str:
     """指定された長さ of ランダムな英字文字列を生成する"""
     return "".join(random.choice(chars) for _ in range(length))
+
+GENERAL_LOG_TEMPLATES = [
+    "{value}",
+]
+
+
+LOG_TEMPLATES = {
+    "ip_address": [
+        "[{timestamp}] INFO: Connection established from {value}",
+        "[{timestamp}] WARNING: Security alert - login attempt failed from {value} (user: root)",
+        "[{timestamp}] ERROR: Access denied to critical resources from {value}",
+        "[{timestamp}] INFO: System update downloaded from {value}",
+    ],
+    "email": [
+        "[{timestamp}] MAIL: Delivered message to recipient <{value}> successfully.",
+        "[{timestamp}] MAIL: Spam warning - quarantine flag set for sender <{value}>.",
+        "[{timestamp}] MAIL: Bounce warning - target mailbox <{value}> is full.",
+        "[{timestamp}] MAIL: Incoming session started from mailserver <{value}>.",
+    ],
+    "url": [
+        "[{timestamp}] HTTP: GET requests targeting link: {value}",
+        "[{timestamp}] HTTP: Redirected resource to backup node at {value}",
+        "[{timestamp}] ERROR: Dead link warning reported at URL {value}",
+        "[{timestamp}] INFO: Crawled external reference target: {value}",
+    ],
+    "mac_address": [
+        "[{timestamp}] DHCP: Assigning lease to hardware ID {value}",
+        "[{timestamp}] DHCP: ARP spoofing warning from address {value}",
+        "[{timestamp}] INFO: Client associated with MAC {value}",
+    ],
+    "date": [
+        "[{timestamp}] INFO: Database backup created on {value}",
+        "[{timestamp}] WARN: License validation required since {value}",
+        "[{timestamp}] ERROR: Log rotation task failed on date {value}",
+    ]
+}
+
+def build_realistic_log(value_type: str, correct_val: str, dummies: list[str], noises: list[str]) -> str:
+    """正解、ダミー、ノイズを埋め込んだ没入感のある複数行ログテキストを生成する"""
+    timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    thread_id = random.randint(1000, 9999)
+    
+    templates = LOG_TEMPLATES.get(value_type, GENERAL_LOG_TEMPLATES)
+    lines = []
+    
+    # 1. 正解行を1つ追加
+    correct_temp = random.choice(templates)
+    lines.append(correct_temp.format(timestamp=timestamp, value=correct_val, thread_id=thread_id))
+    
+    # 2. ダミー行を追加
+    for dummy in dummies:
+        temp = random.choice(templates)
+        lines.append(temp.format(timestamp=timestamp, value=dummy, thread_id=thread_id))
+        
+    # 3. ノイズ行を追加
+    for noise in noises:
+        temp = random.choice(templates)
+        lines.append(temp.format(timestamp=timestamp, value=noise, thread_id=thread_id))
+        
+    random.shuffle(lines)
+    return "\n".join(lines)
 
 # --- Ex1 ~ Ex20 の問題生成テンプレート ---
 
@@ -238,6 +301,101 @@ def generate_ex20_problem(level: str) -> tuple[str, str, list[str], list[str], l
     pure_noises = ["temp", "data", "val", "test", "err", "12", "99", "abc", "?", "!", "#", "@", "$", "*", "%"]
     return hint, correct, dummies, correct_patterns, dummy_patterns, pure_noises
 
+# --- アーケードモード自動生成関数 ---
+def generate_arcade_problem(level: str) -> tuple[str, str, list[str], list[str], list[str], list[str], str]:
+    """難易度Hard以上向けのプロシージャル問題生成ロジック。
+    hint, correct_string, dummies, correct_patterns, dummy_patterns, pure_noises, value_type を返す"""
+    target_types = ["ip_address", "mac_address", "url", "email", "date"]
+    selected_type = random.choice(target_types)
+    
+    if selected_type == "ip_address":
+        correct = f"192.168.{random.randint(1, 254)}.{random.randint(1, 254)}"
+        dummies = [
+            f"192.168",
+            f"192.168.{random.randint(1, 254)}",
+            f"192.168.abc.{random.randint(1, 254)}",
+            f"192.168.{random.randint(1, 254)}.abc",
+        ]
+        correct_patterns = [r"\b192\.168\.\d{1,3}\.\d{1,3}\b", r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"]
+        dummy_patterns = [r"\b\d{1,3}\.\d{1,3}\b", r"\d+", r"\b[a-zA-Z0-9.]+\b"]
+        pure_noises = [
+            "localhost", "dns-resolver", "auth_server",
+            "node-1", "backup_service", "admin_panel"
+        ]
+        hint = "ログファイル等のテキストから、IPv4形式のIPアドレスを抽出する正規表現を記述しなさい。※単語境界（\\b）を利用すること"
+        
+    elif selected_type == "mac_address":
+        def rand_hex_pair():
+            return "".join(random.choice("0123456789ABCDEF") for _ in range(2))
+        
+        correct = ":".join(rand_hex_pair() for _ in range(6))
+        dummies = [
+            "-".join(rand_hex_pair() for _ in range(6)),
+            ":".join(rand_hex_pair() for _ in range(5)),
+            ":".join(rand_hex_pair() for _ in range(4)) + ":GG:HH",
+            ":".join(rand_hex_pair() for _ in range(5)) + ":GG",
+        ]
+        correct_patterns = [r"\b[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}\b", r"\b[0-9A-F]{2}(:[0-9A-F]{2}){5}\b"]
+        dummy_patterns = [r"\b[0-9A-Fa-f]{2}(-[0-9A-Fa-f]{2}){5}\b", r"\b[a-zA-Z0-9:]+\b", r"\w+"]
+        pure_noises = [
+            "001A2B3C4D5E", "123456", "UNKNOWN_DEV",
+            "eth0", "wlan0", "lo"
+        ]
+        hint = "ログファイル等のテキストから、コロン区切り形式のMACアドレス（大文字HEX限定、例: 00:1A:2B:3C:4D:5E）を抽出する正規表現を記述しなさい。※単語境界（\\b）を利用すること"
+        
+    elif selected_type == "email":
+        correct = f"user_{random.randint(100, 999)}@example.com"
+        dummies = [
+            f"user_{random.randint(100, 999)}@example",
+            f"user_{random.randint(100, 999)}.example.com",
+            f"@example.com",
+            f"user_{random.randint(100, 999)}@.com",
+        ]
+        correct_patterns = [r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b"]
+        dummy_patterns = [r"\b[a-z]+@[a-z]+\b", r"\b[a-zA-Z0-9.]+@[a-z]+\b", r"\w+"]
+        pure_noises = [
+            "admin", "webmaster", "http://example.com",
+            "no-reply", "mailer-daemon"
+        ]
+        hint = "ログファイル等のテキストから、標準的なメールアドレスの形式（例: user@example.com）を抽出する正規表現を記述しなさい。※単語境界（\\b）を利用すること"
+        
+    elif selected_type == "url":
+        correct = f"https://server-{random.randint(1, 9)}.network.local/api"
+        dummies = [
+            f"http:/server-{random.randint(1, 9)}.network.local",
+            f"https:server-{random.randint(1, 9)}.network.local",
+            f"https://server-{random.randint(1, 9)}",
+            f"ftp://server-{random.randint(1, 9)}.network.local",
+        ]
+        correct_patterns = [r"https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/[a-zA-Z0-9_.-]*)*"]
+        dummy_patterns = [r"https://[a-z]+", r"www\.[a-z]+\.com", r"[a-zA-Z0-9:/.]+"]
+        pure_noises = [
+            "network.local", "server-9", "api/v1/auth",
+            "127.0.0.1", "localhost", "dns-resolver"
+        ]
+        hint = "ログファイル等のテキストから、httpまたはhttpsから始まるWebのURLを抽出する正規表現を記述しなさい。"
+        
+    else:  # date
+        year = random.randint(2020, 2030)
+        month = random.randint(1, 12)
+        day = random.randint(1, 28)
+        correct = f"{year:04d}-{month:02d}-{day:02d}"
+        dummies = [
+            f"{year:04d}/{month:02d}/{day:02d}",
+            f"{year % 100:02d}-{month:02d}-{day:02d}",
+            f"{year:04d}-{month:02d}-abc",
+            f"{year:04d}-{month:02d}",
+        ]
+        correct_patterns = [r"\b\d{4}-\d{2}-\d{2}\b", r"\b[0-9]{4}-[0-9]{2}-[0-9]{2}\b"]
+        dummy_patterns = [r"\b\d{4}/\d{2}/\d{2}\b", r"\b\d{2}-\d{2}-\d{2}\b", r"\b\d{4}-\d{2}\b"]
+        pure_noises = [
+            "2026", "06-04", "LOG_DATE", "timestamp",
+            "UTC", "GMT+9"
+        ]
+        hint = "ログファイル等のテキストから、ハイフン区切りの日付形式（YYYY-MM-DD、例: 2026-06-04）を抽出する正規表現を記述しなさい。※単語境界（\\b）を利用すること"
+        
+    return hint, correct, dummies, correct_patterns, dummy_patterns, pure_noises, selected_type
+
 # --- 汎用ダミーパターン（間違いの選択肢が不足した場合の補完用） ---
 COMMON_DUMMY_PATTERNS = [
     r"^.*$",
@@ -249,42 +407,34 @@ COMMON_DUMMY_PATTERNS = [
 
 def generate_stage(level: str = "easy") -> dict:
     """難易度に応じたステージデータを生成する"""
-    # 難易度の正規化とバリデーション
     level = level.lower()
     if level not in ("easy", "hard"):
         level = "easy"
 
-    # Ex1 ~ Ex20 のジェネレーターからランダムに選択
-    generators = [
-        generate_ex1_problem, generate_ex2_problem, generate_ex3_problem, generate_ex4_problem, generate_ex5_problem,
-        generate_ex6_problem, generate_ex7_problem, generate_ex8_problem, generate_ex9_problem, generate_ex10_problem,
-        generate_ex11_problem, generate_ex12_problem, generate_ex13_problem, generate_ex14_problem, generate_ex15_problem,
-        generate_ex16_problem, generate_ex17_problem, generate_ex18_problem, generate_ex19_problem, generate_ex20_problem
-    ]
-    generator = random.choice(generators)
-    hint, correct_string, dummies, correct_patterns, dummy_patterns, pure_noises = generator(level)
+    if level == "hard":
+        hint, correct_string, dummies, correct_patterns, dummy_patterns, pure_noises, value_type = generate_arcade_problem(level)
+    else:
+        generators = [
+            generate_ex1_problem, generate_ex2_problem, generate_ex3_problem, generate_ex4_problem, generate_ex5_problem,
+            generate_ex6_problem, generate_ex7_problem, generate_ex8_problem, generate_ex9_problem, generate_ex10_problem,
+            generate_ex11_problem, generate_ex12_problem, generate_ex13_problem, generate_ex14_problem, generate_ex15_problem,
+            generate_ex16_problem, generate_ex17_problem, generate_ex18_problem, generate_ex19_problem, generate_ex20_problem
+        ]
+        generator = random.choice(generators)
+        hint, correct_string, dummies, correct_patterns, dummy_patterns, pure_noises = generator(level)
+        value_type = "general"
 
     # 難易度に応じた純粋なノイズ数
     noise_count = random.randint(3, 6) if level == "easy" else random.randint(12, 18)
-    # 問題専用のノイズプールからランダムに生成
     selected_noises = [random.choice(pure_noises) for _ in range(noise_count)]
 
-    # 全てをマージしてシャッフル (noise_textの構築用)
-    # correct_string は必ず1つだけ配置する
-    elements = [correct_string] + dummies + selected_noises
-    random.shuffle(elements)
-
-    # 空白区切りで結合
-    noise_text = " ".join(elements)
+    # 没入感ログテキストとしてビルドする（改行で結合）
+    noise_text = build_realistic_log(value_type, correct_string, dummies, selected_noises)
 
     # --- 4択の選択肢 (choices) を生成 (すべて正規表現パターン) ---
-    # 1. 正解パターンを1つ選択
     correct_pat = random.choice(correct_patterns)
-    
-    # 2. ダミーパターンを3つ選択 (ダミーリストから重複なく)
     unique_dummy_pats = list(set(dummy_patterns))
     
-    # もしダミーパターンが足りない場合は、汎用ダミーパターンから補充
     if len(unique_dummy_pats) < 3:
         needed = 3 - len(unique_dummy_pats)
         for p in COMMON_DUMMY_PATTERNS:
@@ -295,8 +445,6 @@ def generate_stage(level: str = "easy") -> dict:
                     break
                     
     selected_dummies = random.sample(unique_dummy_pats, 3)
-    
-    # 3. マージしてシャッフル
     choices = [correct_pat] + selected_dummies
     random.shuffle(choices)
 

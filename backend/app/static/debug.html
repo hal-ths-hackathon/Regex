@@ -181,21 +181,22 @@
     }
 
     .noise-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      display: block;
       background-color: rgba(0, 0, 0, 0.25);
       border: 1px solid var(--border-color);
       padding: 1.2rem;
       border-radius: 8px;
       font-family: monospace;
-      font-size: 1.1rem;
-      max-height: 250px;
+      font-size: 1.0rem;
+      max-height: 350px;
       overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
     }
 
     .word {
-      padding: 0.1rem 0.4rem;
+      display: inline-block;
+      padding: 0.1rem 0.3rem;
       border-radius: 4px;
       background-color: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.05);
@@ -642,21 +643,17 @@
       }
 
       try {
-        const regex = new RegExp(patternText);
-        const words = currentStageData.noise_text.split(' ');
+        // グローバルフラグ 'g' とマルチラインフラグ 'm' を付与して RegExp オブジェクトを作成
+        const regex = new RegExp(patternText, 'gm');
+        const noiseText = currentStageData.noise_text;
         const correctString = currentStageData.correct_string;
 
-        // 各単語に正規表現を適用し、マッチした単語のリストを抽出
-        const matchedWords = [];
-        words.forEach(word => {
-          if (regex.test(word)) {
-            matchedWords.push(word);
-          }
-        });
+        // テキスト全体にマッチさせて抽出
+        const matches = [...noiseText.matchAll(regex)].map(m => m[0]);
 
-        // マッチした単語を表示
-        if (matchedWords.length > 0) {
-          valSimMatches.textContent = matchedWords.join(', ');
+        // マッチした部分を表示
+        if (matches.length > 0) {
+          valSimMatches.textContent = matches.join(', ');
         } else {
           valSimMatches.textContent = '(マッチなし)';
         }
@@ -666,9 +663,28 @@
         const normalizedInput = patternText.trim();
         const isPatternCorrect = currentStageData.correct_patterns.some(p => p.trim() === normalizedInput);
 
-        // 2. プレイヤーの入力した正規表現が、noise_text内から「correct_stringのみ」を完全に一致して抽出できているか
-        const isMatchCorrect = matchedWords.length === 1 && matchedWords[0] === correctString;
+        // 2. マッチ結果の検証 (行ごとに評価)
+        const lines = noiseText.split('\n');
+        let matchedCorrectLine = false;
+        let matchedIncorrectLine = false;
 
+        lines.forEach(line => {
+          const tempRegex = new RegExp(patternText, 'm');
+          const hasMatch = tempRegex.test(line);
+          const isCorrectLine = line.includes(correctString);
+
+          if (isCorrectLine) {
+            if (hasMatch) {
+              matchedCorrectLine = true;
+            }
+          } else {
+            if (hasMatch) {
+              matchedIncorrectLine = true;
+            }
+          }
+        });
+
+        const isMatchCorrect = matchedCorrectLine && !matchedIncorrectLine;
         const isSuccess = isPatternCorrect && isMatchCorrect;
 
         if (isSuccess) {
@@ -691,7 +707,7 @@
           }
         }
 
-        // 入力された正規表現に基づいて、単語のハイライトをリアルタイム更新
+        // ハイライトの更新
         updateNoiseHighlight(regex);
 
       } catch (error) {
@@ -704,47 +720,52 @@
       }
     }
 
-    // noise_text 内の単語をリアルタイムでハイライト
+    // noise_text 内のテキスト全体に対してリアルタイムでハイライト置換を行う
     function updateNoiseHighlight(regex) {
       if (!currentStageData) return;
 
-      valNoiseContainer.innerHTML = '';
       const noiseText = currentStageData.noise_text;
       const correctString = currentStageData.correct_string;
-      const words = noiseText.split(' ');
 
-      words.forEach(word => {
-        const span = document.createElement('span');
-        span.className = 'word';
-        span.textContent = word;
+      // XSS対策のHTMLエスケープ
+      let escapedText = noiseText
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 
-        if (regex) {
-          try {
-            if (regex.test(word)) {
-              if (word === correctString) {
-                // 正解文字列に正しくマッチした場合は緑
-                span.classList.add('correct');
-              } else {
-                // ダミーやノイズに誤ってマッチ（過剰マッチ）した場合は赤
-                span.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-                span.style.borderColor = 'var(--accent-error)';
-                span.style.color = '#ff8080';
-              }
+      if (!regex) {
+        // 正規表現がないときは、デバッグ支援として正解文字列の周りに薄い破線の枠線を施す
+        const escapedCorrect = correctString
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+          
+        // 正解部分を破線付きの span でラップ
+        const regexCorrect = new RegExp(escapedCorrect.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
+        const initialHTML = escapedText.replace(regexCorrect, `<span class="word" style="border-color: rgba(16, 185, 129, 0.5); border-style: dashed;">${escapedCorrect}</span>`);
+        
+        valNoiseContainer.innerHTML = initialHTML;
+        return;
+      }
+
+      try {
+        const patternText = inputRegex.value.trim();
+        const lines = escapedText.split('\n');
+        const highlightedLines = lines.map(line => {
+          const isCorrectLine = line.includes(correctString);
+          const lineRegex = new RegExp(patternText, 'g');
+          return line.replace(lineRegex, (match) => {
+            if (isCorrectLine) {
+              return `<span class="word correct">${match}</span>`;
+            } else {
+              return `<span class="word" style="background-color: rgba(239, 68, 68, 0.2); border: 1px solid var(--accent-error); color: #ff8080;">${match}</span>`;
             }
-          } catch (e) {
-            // エラー時は何もしない
-          }
-        } else {
-          // 初期状態などで正規表現がない場合、正解位置のみを控えめに緑枠にする（デバッグ支援）
-          if (word === correctString) {
-            span.style.borderColor = 'rgba(16, 185, 129, 0.5)';
-            span.style.borderStyle = 'dashed';
-          }
-        }
-
-        valNoiseContainer.appendChild(span);
-        valNoiseContainer.appendChild(document.createTextNode(' '));
-      });
+          });
+        });
+        valNoiseContainer.innerHTML = highlightedLines.join('\n');
+      } catch (e) {
+        valNoiseContainer.innerHTML = escapedText;
+      }
     }
   </script>
 </body>
