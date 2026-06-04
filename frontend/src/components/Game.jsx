@@ -206,77 +206,6 @@ function Game({ level, onBackToTitle }) {
     }, 1000)
   }
 
-  // Helper to highlight noise text in real time
-  const renderHighlightedNoise = () => {
-    if (!stageData) return ''
-
-    const noiseText = stageData.noise_text
-    const correctString = stageData.correct_string
-
-    // Escape HTML to prevent XSS/rendering issues
-    const escapeHtml = (text) => {
-      return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-    }
-
-    if (!regexInput.trim()) {
-      // No input: draw target string with a dashed border
-      const escapedCorrect = escapeHtml(correctString)
-      const lines = noiseText.split('\n')
-      return lines.map((line, idx) => {
-        const isCorrectLine = line.includes(correctString)
-        const escapedLine = escapeHtml(line)
-        if (isCorrectLine) {
-          const parts = escapedLine.split(escapedCorrect)
-          return (
-            <div key={idx} className={styles.logLine}>
-              {parts[0]}
-              <span className={styles.targetDashed}>{escapedCorrect}</span>
-              {parts[1]}
-            </div>
-          )
-        }
-        return <div key={idx} className={styles.logLine}>{escapedLine}</div>
-      })
-    }
-
-    try {
-      const lines = noiseText.split('\n')
-      return lines.map((line, idx) => {
-        const isCorrectLine = line.includes(correctString)
-
-        // Split line by matches to highlight them
-        const parts = line.split(new RegExp(`(${regexInput.trim()})`, 'g'))
-        
-        return (
-          <div key={idx} className={styles.logLine}>
-            {parts.map((part, pIdx) => {
-              const matchesRegex = new RegExp(`^${regexInput.trim()}$`).test(part)
-              if (matchesRegex) {
-                return (
-                  <span 
-                    key={pIdx} 
-                    className={isCorrectLine ? styles.matchCorrect : styles.matchIncorrect}
-                  >
-                    {escapeHtml(part)}
-                  </span>
-                )
-              }
-              return escapeHtml(part)
-            })}
-          </div>
-        )
-      })
-
-    } catch {
-      // Fallback on regex compile errors
-      return noiseText.split('\n').map((line, idx) => (
-        <div key={idx} className={styles.logLine}>{escapeHtml(line)}</div>
-      ))
-    }
-  }
 
   // Render Game Over Screen
   if (gameState === 'GAMEOVER') {
@@ -498,34 +427,6 @@ function Game({ level, onBackToTitle }) {
           </div>
         </div>
 
-        {/* Right Column: Log Monitor */}
-        <div className={styles.logColumn}>
-          <div className={styles.logMonitor}>
-            <div className={styles.monitorHeader}>
-              <span className={styles.monitorTitle}>SIGNAL LOG TERMINAL</span>
-              <div className={styles.monitorStatus}>
-                <span className={styles.blinkingDot}></span>
-                <span>MONITORING STREAM</span>
-              </div>
-            </div>
-            <div className={styles.monitorTerminal}>
-              <div className={styles.scanline}></div>
-              <div className={styles.terminalContent}>
-                {loading ? (
-                  <div className={styles.terminalLoading}>
-                    <span>SCANNING CHANNELS...</span>
-                  </div>
-                ) : (
-                  renderHighlightedNoise()
-                )}
-              </div>
-            </div>
-            <div className={styles.monitorFooter}>
-              <span>GREEN: Target Match</span>
-              <span>RED: Noise Match (Misfire)</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )
