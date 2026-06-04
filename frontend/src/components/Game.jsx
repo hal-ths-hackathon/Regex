@@ -205,6 +205,30 @@ function Game({ level, onBackToTitle }) {
     }, 1500)
   }
 
+  // Skip current stage
+  const handleSkip = () => {
+    if (loading || submitStatus !== 'WAITING') return
+
+    // 10s penalty for skipping
+    const calculatedNextTime = Math.max(0, timeLeft - 10)
+    setTimeLeft(calculatedNextTime)
+
+    const newClearedCount = stagesCleared + 1
+    setStagesCleared(newClearedCount)
+
+    if (calculatedNextTime <= 0) {
+      if (timerRef.current) clearInterval(timerRef.current)
+      setGameState('GAMEOVER')
+    } else {
+      if (newClearedCount >= STAGES_TO_CLEAR) {
+        if (timerRef.current) clearInterval(timerRef.current)
+        setGameState('CLEAR')
+      } else {
+        loadNewStage()
+      }
+    }
+  }
+
   // Restart Game
   const handleRestart = () => {
     setGameState('PLAYING')
@@ -444,7 +468,7 @@ function Game({ level, onBackToTitle }) {
                 <button 
                   type="button" 
                   className={styles.skipBtn}
-                  onClick={loadNewStage}
+                  onClick={handleSkip}
                   disabled={loading || submitStatus !== 'WAITING'}
                 >
                   SKIP MODULE (-10s)
