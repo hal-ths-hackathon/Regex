@@ -8,8 +8,8 @@ from app.generator import generate_stage
 
 app = FastAPI(title="Regex Game API")
 
-# CORS: 環境変数 CORS_ORIGINS からカンマ区切りで読み取り（デフォルトは開発用 localhost）
-_cors_env = os.environ.get("CORS_ORIGINS", "http://localhost:3000")
+# CORS: 環境変数 CORS_ORIGINS からカンマ区切りで読み取り（デフォルトは開発用 localhost 3000 と Vite 5173）
+_cors_env = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173")
 origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
 
 app.add_middleware(
