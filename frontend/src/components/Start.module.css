@@ -227,3 +227,100 @@
         transform: translate(-50%, -50%);
     }
 }
+
+.rankingButton {
+    background-color: rgba(0, 240, 255, 0.05);
+    border: 2px solid rgba(0, 240, 255, 0.4);
+    color: #00f0ff;
+    padding: 12px 32px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 6px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    transition: all 0.2s ease;
+    font-family: "DotGothic16", sans-serif;
+    margin-top: 10px;
+}
+
+.rankingButton:hover {
+    background-color: rgba(0, 240, 255, 0.15);
+    border-color: #00f0ff;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+    transform: scale(1.02);
+}
+
+.rankingButton:active {
+    transform: scale(0.98);
+}
+
+/* Coming Soon Overlay */
+.overlayWrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(3, 5, 10, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  box-sizing: border-box;
+  padding: 20px;
+}
+
+.overlayBox {
+  width: 100%;
+  max-width: 500px;
+  background: rgba(10, 12, 22, 0.9);
+  border: 2px solid var(--neon-cyan, #00f0ff);
+  border-radius: 8px;
+  box-shadow: 0 0 30px rgba(0, 240, 255, 0.3), inset 0 0 15px rgba(0, 240, 255, 0.1);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  gap: 20px;
+}
+
+.glitchTitle {
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--neon-cyan, #00f0ff);
+  letter-spacing: 3px;
+  text-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+  margin-bottom: 8px;
+  font-family: "DotGothic16", sans-serif;
+}
+
+.overlayText {
+  font-size: 16px;
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.backBtn {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "DotGothic16", sans-serif;
+  letter-spacing: 1px;
+  background: transparent;
+  border: 2px solid #475569;
+  color: #94a3b8;
+}
+
+.backBtn:hover {
+  border-color: #cbd5e1;
+  color: #fff;
+}

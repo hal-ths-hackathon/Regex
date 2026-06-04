@@ -6,9 +6,29 @@ const warningText = Array(30).fill('WARNING').join(' ')
 
 function Start({ onStartGame }) {
   const [level, setLevel] = useState('easy')
+  const [showComingSoon, setShowComingSoon] = useState(false)
 
   return (
     <div className={styles.wrapper}>
+      {showComingSoon && (
+        <div className={styles.overlayWrapper}>
+          <div className={styles.overlayBox}>
+            <div className={styles.glitchTitle} data-text="COMING SOON">COMING SOON</div>
+            <p className={styles.overlayText}>
+              グローバルランキング機能は現在開発中です。<br />
+              次回のアップデートをお待ちください。
+            </p>
+            <button
+              type="button"
+              className={styles.backBtn}
+              onClick={() => setShowComingSoon(false)}
+            >
+              RETURN / 戻る
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className={styles.top}>
         <div className={`${styles.warningRow} ${styles.warningTop}`}>
           <span className={styles.warningText}>{warningText}</span>
@@ -21,18 +41,18 @@ function Start({ onStartGame }) {
           <div className={styles.titleBlock}>
             <h2 className={styles.title}>Regex</h2>
             <p className={styles.subtitle}>- レジェックス -</p>
-            <p className={styles.description}>記憶の力で、爆破を阻止しよう</p>
-            
+            <p className={styles.description}>記号の力で、爆破を阻止しよう</p>
+
             <div className={styles.controlsBlock}>
               <div className={styles.difficultyContainer}>
-                <button 
+                <button
                   type="button"
                   className={`${styles.diffButton} ${level === 'easy' ? styles.activeEasy : ''}`}
                   onClick={() => setLevel('easy')}
                 >
                   EASY MODE
                 </button>
-                <button 
+                <button
                   type="button"
                   className={`${styles.diffButton} ${level === 'hard' ? styles.activeHard : ''}`}
                   onClick={() => setLevel('hard')}
@@ -40,13 +60,21 @@ function Start({ onStartGame }) {
                   HARD MODE
                 </button>
               </div>
-              
-              <button 
+
+              <button
                 type="button"
                 className={styles.startButton}
                 onClick={() => onStartGame && onStartGame(level)}
               >
                 START BOMB DEFUSAL / 爆破阻止開始
+              </button>
+
+              <button
+                type="button"
+                className={styles.rankingButton}
+                onClick={() => setShowComingSoon(true)}
+              >
+                GLOBAL RANKINGS / ランキング
               </button>
             </div>
 
