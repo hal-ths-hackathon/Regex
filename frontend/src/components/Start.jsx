@@ -6,9 +6,29 @@ const warningText = Array(30).fill('WARNING').join(' ')
 
 function Start({ onStartGame }) {
   const [level, setLevel] = useState('easy')
+  const [showComingSoon, setShowComingSoon] = useState(false)
 
   return (
     <div className={styles.wrapper}>
+      {showComingSoon && (
+        <div className={styles.overlayWrapper}>
+          <div className={styles.overlayBox}>
+            <div className={styles.glitchTitle} data-text="COMING SOON">COMING SOON</div>
+            <p className={styles.overlayText}>
+              グローバルランキング機能は現在開発中です。<br />
+              次回のアップデートをお待ちください。
+            </p>
+            <button 
+              type="button" 
+              className={styles.backBtn} 
+              onClick={() => setShowComingSoon(false)}
+            >
+              RETURN / 戻る
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className={styles.top}>
         <div className={`${styles.warningRow} ${styles.warningTop}`}>
           <span className={styles.warningText}>{warningText}</span>
@@ -47,6 +67,14 @@ function Start({ onStartGame }) {
                 onClick={() => onStartGame && onStartGame(level)}
               >
                 START BOMB DEFUSAL / 爆破阻止開始
+              </button>
+
+              <button 
+                type="button"
+                className={styles.rankingButton}
+                onClick={() => setShowComingSoon(true)}
+              >
+                GLOBAL RANKINGS / ランキング
               </button>
             </div>
 
