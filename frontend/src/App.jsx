@@ -1,7 +1,10 @@
+import Start from "./components/Start"
 
 function App() {
   return (
-    <div>App</div>
+    <div>
+      <Start />
+    </div>
   )
 }
 

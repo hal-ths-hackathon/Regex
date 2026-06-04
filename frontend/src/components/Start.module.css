@@ -1,0 +1,60 @@
+.wrapper {
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.topArea {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.top,
+.bottom {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 16px 0;
+}
+
+.logoArea {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    margin-top: 0;
+}
+
+.logoWrapper {
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.kigouImage,
+.warningImage {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.title {
+    position: absolute;
+    top: 80%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    text-align: center;
+    color: #ffffff;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.75);
+    letter-spacing: 27px;
+    font-size: 128px;
+}
