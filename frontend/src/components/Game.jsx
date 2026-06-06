@@ -338,13 +338,13 @@ function Game({ level, onBackToTitle }) {
   }
 
   return (
-    <div className={styles.gameContainer}>
+    <div className={`${styles.gameContainer} ${timeLeft <= 5 ? styles.criticalActive : ''}`}>
       {/* Top Banner Warning Status */}
-      <div className={styles.statusBar}>
+      <div className={`${styles.statusBar} ${timeLeft <= 5 ? styles.statusBarCritical : ''}`}>
         <div className={styles.warningIndicator}>
-          <span className={styles.warningDot}></span>
-          <span className={styles.statusText}>
-            {timeLeft < 15 ? 'ALERT: CRITICAL THREAT DETECTED' : 'SYSTEM STATUS: DEFUSAL PROTOCOL ACTIVE'}
+          <span className={`${styles.warningDot} ${timeLeft <= 5 ? styles.warningDotCritical : ''}`}></span>
+          <span className={`${styles.statusText} ${timeLeft <= 5 ? styles.statusTextCritical : ''}`}>
+            {timeLeft <= 5 ? '☢☢☢ CRITICAL: DETONATION IMMINENT ☢☢☢' : timeLeft < 15 ? 'ALERT: CRITICAL THREAT DETECTED' : 'SYSTEM STATUS: DEFUSAL PROTOCOL ACTIVE'}
           </span>
         </div>
         <div className={styles.difficultyIndicator}>
@@ -392,9 +392,9 @@ function Game({ level, onBackToTitle }) {
               </div>
             </div>
 
-            <div className={`${styles.timerBlock} ${timeLeft < 15 ? styles.timerAlert : ''}`}>
+            <div className={`${styles.timerBlock} ${timeLeft <= 5 ? styles.timerCritical : timeLeft < 15 ? styles.timerAlert : ''}`}>
               <span className={styles.metaLabel}>TIME REMAINING:</span>
-              <span className={styles.timerVal}>
+              <span className={`${styles.timerVal} ${timeLeft <= 5 ? styles.timerValCritical : ''}`}>
                 {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:
                 {String(timeLeft % 60).padStart(2, '0')}
               </span>
