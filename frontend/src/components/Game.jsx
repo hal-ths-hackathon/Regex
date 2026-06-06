@@ -15,6 +15,7 @@ function Game({ level, onBackToTitle }) {
   const [submitStatus, setSubmitStatus] = useState('WAITING')
   const [submitMessage, setSubmitMessage] = useState('')
   const [submitMatches, setSubmitMatches] = useState('-')
+  const [stageHistory, setStageHistory] = useState([]) // Array of 'correct' | 'failed' | 'skipped'
 
   const timerRef = useRef(null)
   const usedStageIdsRef = useRef(new Set())
@@ -176,8 +177,10 @@ function Game({ level, onBackToTitle }) {
     if (isCorrect) {
       setCorrectAttempts(prev => prev + 1)
       setTimeLeft(calculatedNextTime)
+      setStageHistory(prev => [...prev, 'correct'])
     } else {
       setTimeLeft(calculatedNextTime)
+      setStageHistory(prev => [...prev, 'failed'])
       // Alert flash error visual
       const consoleBox = document.getElementById('consoleBox')
       if (consoleBox) {
@@ -212,6 +215,7 @@ function Game({ level, onBackToTitle }) {
     // 10s penalty for skipping
     const calculatedNextTime = Math.max(0, timeLeft - 10)
     setTimeLeft(calculatedNextTime)
+    setStageHistory(prev => [...prev, 'skipped'])
 
     const newClearedCount = stagesCleared + 1
     setStagesCleared(newClearedCount)
@@ -233,6 +237,7 @@ function Game({ level, onBackToTitle }) {
   const handleRestart = () => {
     setGameState('PLAYING')
     setStagesCleared(0)
+    setStageHistory([])
     setTimeLeft(60)
     usedStageIdsRef.current.clear()
     setTotalAttempts(0)
@@ -355,14 +360,35 @@ function Game({ level, onBackToTitle }) {
             <div className={styles.progressBlock}>
               <span className={styles.metaLabel}>DECRYPTION PROGRESS:</span>
               <div className={styles.progressNodes}>
-                {Array.from({ length: STAGES_TO_CLEAR }).map((_, idx) => (
-                  <span 
-                    key={idx} 
-                    className={`${styles.progressNode} ${idx < stagesCleared ? styles.nodeCleared : ''} ${idx === stagesCleared ? styles.nodeActive : ''}`}
-                  >
-                    {idx < stagesCleared ? '✔' : idx + 1}
-                  </span>
-                ))}
+                {Array.from({ length: STAGES_TO_CLEAR }).map((_, idx) => {
+                  let nodeClass = styles.progressNode
+                  let nodeContent = idx + 1
+
+                  if (idx < stagesCleared) {
+                    const result = stageHistory[idx]
+                    if (result === 'correct') {
+                      nodeClass += ` ${styles.nodeCorrect}`
+                      nodeContent = '✔'
+                    } else if (result === 'failed') {
+                      nodeClass += ` ${styles.nodeFailed}`
+                      nodeContent = '✘'
+                    } else if (result === 'skipped') {
+                      nodeClass += ` ${styles.nodeSkipped}`
+                      nodeContent = '↷'
+                    } else {
+                      nodeClass += ` ${styles.nodeCleared}`
+                      nodeContent = '✔'
+                    }
+                  } else if (idx === stagesCleared) {
+                    nodeClass += ` ${styles.nodeActive}`
+                  }
+
+                  return (
+                    <span key={idx} className={nodeClass}>
+                      {nodeContent}
+                    </span>
+                  )
+                })}
               </div>
             </div>
 
