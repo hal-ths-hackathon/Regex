@@ -265,8 +265,17 @@ function Game({ level, onBackToTitle }) {
   if (gameState === 'GAMEOVER') {
     return (
       <div className={styles.overlayWrapper}>
-        <div className={styles.overlayBox}>
-          <div className={styles.glitchTitle} data-text="SYSTEM COMPROMISED">SYSTEM COMPROMISED</div>
+        <div className={styles.explosionFlash}></div>
+        <div className={styles.shockwave}></div>
+        <div className={styles.glitchNoise}></div>
+
+        <div className={`${styles.overlayBox} ${styles.gameOverBoxShake}`}>
+          <div className={styles.detonationAlert}>
+            ⚠️ DETONATION DETECTED ⚠️
+          </div>
+          <div className={`${styles.glitchTitle} ${styles.gameOverGlitch}`} data-text="SYSTEM COMPROMISED">
+            SYSTEM COMPROMISED
+          </div>
           <h2 className={styles.gameOverHeading}>爆破阻止失敗...</h2>
           <p className={styles.overlayText}>
             制限時間内に正規表現解読コアをインストールできませんでした。<br />
