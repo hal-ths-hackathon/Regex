@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import styles from './Game.module.css'
 import mockStages from '../mock/stages.json'
+import bomGif from '../assets/bom.gif'
 
 function Game({ level, onBackToTitle }) {
   // Game state: 'PLAYING', 'GAMEOVER', 'CLEAR'
@@ -10,11 +11,13 @@ function Game({ level, onBackToTitle }) {
   const [timeLeft, setTimeLeft] = useState(60) // 60 seconds starting time
   const [regexInput, setRegexInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [totalAttempts, setTotalAttempts] = useState(0)
   const [correctAttempts, setCorrectAttempts] = useState(0)
   const [submitStatus, setSubmitStatus] = useState('WAITING')
   const [submitMessage, setSubmitMessage] = useState('')
   const [submitMatches, setSubmitMatches] = useState('-')
+  const [stageHistory, setStageHistory] = useState([]) // Array of 'correct' | 'failed' | 'skipped'
 
   const timerRef = useRef(null)
   const usedStageIdsRef = useRef(new Set())
@@ -22,12 +25,15 @@ function Game({ level, onBackToTitle }) {
   const STAGES_TO_CLEAR = 5
 
   // Load a new stage
-  const loadNewStage = useCallback(async () => {
+  const loadNewStage = useCallback(async (isFirst = false) => {
     setLoading(true)
     setRegexInput('')
     setSubmitStatus('WAITING')
     setSubmitMessage('')
     setSubmitMatches('-')
+
+    const startTime = Date.now()
+    const MIN_LOADING_TIME = 1500
 
     try {
       // Try to fetch from backend
@@ -36,6 +42,14 @@ function Game({ level, onBackToTitle }) {
         throw new Error(`HTTP status ${response.status}`)
       }
       const data = await response.json()
+
+      if (isFirst) {
+        const elapsed = Date.now() - startTime
+        if (elapsed < MIN_LOADING_TIME) {
+          await new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME - elapsed))
+        }
+      }
+
       setStageData(data)
       usedStageIdsRef.current.add(data.stage_id)
     } catch (err) {
@@ -49,8 +63,16 @@ function Game({ level, onBackToTitle }) {
         usedStageIdsRef.current.clear()
         selected = candidates[Math.floor(Math.random() * candidates.length)]
       }
-      
+
       const uniqueId = `${selected.stage_id}-${Date.now()}`
+
+      if (isFirst) {
+        const elapsed = Date.now() - startTime
+        if (elapsed < MIN_LOADING_TIME) {
+          await new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME - elapsed))
+        }
+      }
+
       setStageData({
         ...selected,
         stage_id: uniqueId
@@ -58,13 +80,16 @@ function Game({ level, onBackToTitle }) {
       usedStageIdsRef.current.add(uniqueId)
     } finally {
       setLoading(false)
+      if (isFirst) {
+        setIsInitialLoad(false)
+      }
     }
   }, [level])
 
   // Initial stage load
   useEffect(() => {
     const timerId = setTimeout(() => {
-      loadNewStage()
+      loadNewStage(true)
     }, 0)
 
     // Start countdown timer
@@ -106,7 +131,7 @@ function Game({ level, onBackToTitle }) {
     if (loading || !stageData || !regexInput.trim()) return
 
     setTotalAttempts(prev => prev + 1)
-    
+
     // Evaluation Logic
     let isCorrect = false
     let matchesStr
@@ -176,8 +201,10 @@ function Game({ level, onBackToTitle }) {
     if (isCorrect) {
       setCorrectAttempts(prev => prev + 1)
       setTimeLeft(calculatedNextTime)
+      setStageHistory(prev => [...prev, 'correct'])
     } else {
       setTimeLeft(calculatedNextTime)
+      setStageHistory(prev => [...prev, 'failed'])
       // Alert flash error visual
       const consoleBox = document.getElementById('consoleBox')
       if (consoleBox) {
@@ -212,6 +239,7 @@ function Game({ level, onBackToTitle }) {
     // 10s penalty for skipping
     const calculatedNextTime = Math.max(0, timeLeft - 10)
     setTimeLeft(calculatedNextTime)
+    setStageHistory(prev => [...prev, 'skipped'])
 
     const newClearedCount = stagesCleared + 1
     setStagesCleared(newClearedCount)
@@ -233,6 +261,7 @@ function Game({ level, onBackToTitle }) {
   const handleRestart = () => {
     setGameState('PLAYING')
     setStagesCleared(0)
+    setStageHistory([])
     setTimeLeft(60)
     usedStageIdsRef.current.clear()
     setTotalAttempts(0)
@@ -260,8 +289,17 @@ function Game({ level, onBackToTitle }) {
   if (gameState === 'GAMEOVER') {
     return (
       <div className={styles.overlayWrapper}>
-        <div className={styles.overlayBox}>
-          <div className={styles.glitchTitle} data-text="SYSTEM COMPROMISED">SYSTEM COMPROMISED</div>
+        <div className={styles.explosionFlash}></div>
+        <div className={styles.shockwave}></div>
+        <div className={styles.glitchNoise}></div>
+
+        <div className={`${styles.overlayBox} ${styles.gameOverBoxShake}`}>
+          <div className={styles.detonationAlert}>
+            ⚠️ DETONATION DETECTED ⚠️
+          </div>
+          <div className={`${styles.glitchTitle} ${styles.gameOverGlitch}`} data-text="SYSTEM COMPROMISED">
+            SYSTEM COMPROMISED
+          </div>
           <h2 className={styles.gameOverHeading}>爆破阻止失敗...</h2>
           <p className={styles.overlayText}>
             制限時間内に正規表現解読コアをインストールできませんでした。<br />
@@ -332,14 +370,26 @@ function Game({ level, onBackToTitle }) {
     )
   }
 
+  if (isInitialLoad && loading) {
+    return (
+      <div className={styles.loadingScreen}>
+        <div className={styles.loadingContent}>
+          <img src={bomGif} alt="Loading..." className={styles.loadingGif} />
+          <div className={styles.loadingText}>ACCESSING NEXT SECTOR...</div>
+          <div className={styles.loadingSubText}>ESTABLISHING SECURE CONNECTION TO DECRYPTION KEY</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className={styles.gameContainer}>
+    <div className={`${styles.gameContainer} ${timeLeft <= 5 ? styles.criticalActive : ''}`}>
       {/* Top Banner Warning Status */}
-      <div className={styles.statusBar}>
+      <div className={`${styles.statusBar} ${timeLeft <= 5 ? styles.statusBarCritical : ''}`}>
         <div className={styles.warningIndicator}>
-          <span className={styles.warningDot}></span>
-          <span className={styles.statusText}>
-            {timeLeft < 15 ? 'ALERT: CRITICAL THREAT DETECTED' : 'SYSTEM STATUS: DEFUSAL PROTOCOL ACTIVE'}
+          <span className={`${styles.warningDot} ${timeLeft <= 5 ? styles.warningDotCritical : ''}`}></span>
+          <span className={`${styles.statusText} ${timeLeft <= 5 ? styles.statusTextCritical : ''}`}>
+            {timeLeft <= 5 ? '☢☢☢ CRITICAL: DETONATION IMMINENT ☢☢☢' : timeLeft < 15 ? 'ALERT: CRITICAL THREAT DETECTED' : 'SYSTEM STATUS: DEFUSAL PROTOCOL ACTIVE'}
           </span>
         </div>
         <div className={styles.difficultyIndicator}>
@@ -355,20 +405,41 @@ function Game({ level, onBackToTitle }) {
             <div className={styles.progressBlock}>
               <span className={styles.metaLabel}>DECRYPTION PROGRESS:</span>
               <div className={styles.progressNodes}>
-                {Array.from({ length: STAGES_TO_CLEAR }).map((_, idx) => (
-                  <span 
-                    key={idx} 
-                    className={`${styles.progressNode} ${idx < stagesCleared ? styles.nodeCleared : ''} ${idx === stagesCleared ? styles.nodeActive : ''}`}
-                  >
-                    {idx < stagesCleared ? '✔' : idx + 1}
-                  </span>
-                ))}
+                {Array.from({ length: STAGES_TO_CLEAR }).map((_, idx) => {
+                  let nodeClass = styles.progressNode
+                  let nodeContent = idx + 1
+
+                  if (idx < stagesCleared) {
+                    const result = stageHistory[idx]
+                    if (result === 'correct') {
+                      nodeClass += ` ${styles.nodeCorrect}`
+                      nodeContent = '✔'
+                    } else if (result === 'failed') {
+                      nodeClass += ` ${styles.nodeFailed}`
+                      nodeContent = '✘'
+                    } else if (result === 'skipped') {
+                      nodeClass += ` ${styles.nodeSkipped}`
+                      nodeContent = '↷'
+                    } else {
+                      nodeClass += ` ${styles.nodeCleared}`
+                      nodeContent = '✔'
+                    }
+                  } else if (idx === stagesCleared) {
+                    nodeClass += ` ${styles.nodeActive}`
+                  }
+
+                  return (
+                    <span key={idx} className={nodeClass}>
+                      {nodeContent}
+                    </span>
+                  )
+                })}
               </div>
             </div>
 
-            <div className={`${styles.timerBlock} ${timeLeft < 15 ? styles.timerAlert : ''}`}>
+            <div className={`${styles.timerBlock} ${timeLeft <= 5 ? styles.timerCritical : timeLeft < 15 ? styles.timerAlert : ''}`}>
               <span className={styles.metaLabel}>TIME REMAINING:</span>
-              <span className={styles.timerVal}>
+              <span className={`${styles.timerVal} ${timeLeft <= 5 ? styles.timerValCritical : ''}`}>
                 {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:
                 {String(timeLeft % 60).padStart(2, '0')}
               </span>
@@ -381,21 +452,14 @@ function Game({ level, onBackToTitle }) {
               <span className={styles.cardTitle}>DECRYPTION OBJECTIVE (問題)</span>
               {stageData && <span className={styles.stageId}>ID: {stageData.stage_id.substring(0, 8)}</span>}
             </div>
-            {loading ? (
-              <div className={styles.loadingSpinnerContainer}>
-                <span className={styles.spinner}></span>
-                <span>Generating Signature...</span>
-              </div>
-            ) : (
-              stageData && (
-                <div className={styles.cardBody}>
-                  <p className={styles.hintText}>{stageData.hint}</p>
-                  <div className={styles.targetBlock}>
-                    <span className={styles.targetLabel}>TARGET STRING:</span>
-                    <span className={styles.targetValue}>{stageData.correct_string}</span>
-                  </div>
+            {stageData && (
+              <div className={styles.cardBody}>
+                <p className={styles.hintText}>{stageData.hint}</p>
+                <div className={styles.targetBlock}>
+                  <span className={styles.targetLabel}>TARGET STRING:</span>
+                  <span className={styles.targetValue}>{stageData.correct_string}</span>
                 </div>
-              )
+              </div>
             )}
           </div>
 
@@ -407,9 +471,9 @@ function Game({ level, onBackToTitle }) {
               </div>
               <div className={styles.choicesGrid}>
                 {stageData?.choices.map((choice, index) => (
-                  <button 
-                    key={index} 
-                    type="button" 
+                  <button
+                    key={index}
+                    type="button"
                     className={`${styles.choiceBtn} ${regexInput === choice ? styles.choiceBtnActive : ''}`}
                     onClick={() => handleChoiceClick(choice)}
                     disabled={loading || submitStatus !== 'WAITING'}
@@ -437,8 +501,8 @@ function Game({ level, onBackToTitle }) {
                     {regexInput || '選択肢をクリックして選んでください'}
                   </span>
                 ) : (
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className={styles.regexInputField}
                     value={regexInput}
                     onChange={(e) => handleInputChange(e.target.value)}
@@ -465,16 +529,16 @@ function Game({ level, onBackToTitle }) {
 
               {/* Action row */}
               <div className={styles.consoleActionRow}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={styles.skipBtn}
                   onClick={handleSkip}
                   disabled={loading || submitStatus !== 'WAITING'}
                 >
                   SKIP MODULE (-10s)
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={`${styles.submitBtn} ${submitStatus === 'SUCCESS' ? styles.submitBtnReady : ''}`}
                   onClick={handleSubmit}
                   disabled={loading || !regexInput || submitStatus !== 'WAITING'}
