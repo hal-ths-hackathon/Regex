@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import styles from './Game.module.css'
 import mockStages from '../mock/stages.json'
+import bomGif from '../assets/bom.gif'
 
 function Game({ level, onBackToTitle }) {
   // Game state: 'PLAYING', 'GAMEOVER', 'CLEAR'
@@ -10,6 +11,7 @@ function Game({ level, onBackToTitle }) {
   const [timeLeft, setTimeLeft] = useState(60) // 60 seconds starting time
   const [regexInput, setRegexInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [totalAttempts, setTotalAttempts] = useState(0)
   const [correctAttempts, setCorrectAttempts] = useState(0)
   const [submitStatus, setSubmitStatus] = useState('WAITING')
@@ -23,12 +25,15 @@ function Game({ level, onBackToTitle }) {
   const STAGES_TO_CLEAR = 5
 
   // Load a new stage
-  const loadNewStage = useCallback(async () => {
+  const loadNewStage = useCallback(async (isFirst = false) => {
     setLoading(true)
     setRegexInput('')
     setSubmitStatus('WAITING')
     setSubmitMessage('')
     setSubmitMatches('-')
+
+    const startTime = Date.now()
+    const MIN_LOADING_TIME = 1500
 
     try {
       // Try to fetch from backend
@@ -37,6 +42,14 @@ function Game({ level, onBackToTitle }) {
         throw new Error(`HTTP status ${response.status}`)
       }
       const data = await response.json()
+
+      if (isFirst) {
+        const elapsed = Date.now() - startTime
+        if (elapsed < MIN_LOADING_TIME) {
+          await new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME - elapsed))
+        }
+      }
+
       setStageData(data)
       usedStageIdsRef.current.add(data.stage_id)
     } catch (err) {
@@ -50,8 +63,16 @@ function Game({ level, onBackToTitle }) {
         usedStageIdsRef.current.clear()
         selected = candidates[Math.floor(Math.random() * candidates.length)]
       }
-      
+
       const uniqueId = `${selected.stage_id}-${Date.now()}`
+
+      if (isFirst) {
+        const elapsed = Date.now() - startTime
+        if (elapsed < MIN_LOADING_TIME) {
+          await new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME - elapsed))
+        }
+      }
+
       setStageData({
         ...selected,
         stage_id: uniqueId
@@ -59,13 +80,16 @@ function Game({ level, onBackToTitle }) {
       usedStageIdsRef.current.add(uniqueId)
     } finally {
       setLoading(false)
+      if (isFirst) {
+        setIsInitialLoad(false)
+      }
     }
   }, [level])
 
   // Initial stage load
   useEffect(() => {
     const timerId = setTimeout(() => {
-      loadNewStage()
+      loadNewStage(true)
     }, 0)
 
     // Start countdown timer
@@ -107,7 +131,7 @@ function Game({ level, onBackToTitle }) {
     if (loading || !stageData || !regexInput.trim()) return
 
     setTotalAttempts(prev => prev + 1)
-    
+
     // Evaluation Logic
     let isCorrect = false
     let matchesStr
@@ -346,6 +370,18 @@ function Game({ level, onBackToTitle }) {
     )
   }
 
+  if (isInitialLoad && loading) {
+    return (
+      <div className={styles.loadingScreen}>
+        <div className={styles.loadingContent}>
+          <img src={bomGif} alt="Loading..." className={styles.loadingGif} />
+          <div className={styles.loadingText}>ACCESSING NEXT SECTOR...</div>
+          <div className={styles.loadingSubText}>ESTABLISHING SECURE CONNECTION TO DECRYPTION KEY</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`${styles.gameContainer} ${timeLeft <= 5 ? styles.criticalActive : ''}`}>
       {/* Top Banner Warning Status */}
@@ -416,21 +452,14 @@ function Game({ level, onBackToTitle }) {
               <span className={styles.cardTitle}>DECRYPTION OBJECTIVE (問題)</span>
               {stageData && <span className={styles.stageId}>ID: {stageData.stage_id.substring(0, 8)}</span>}
             </div>
-            {loading ? (
-              <div className={styles.loadingSpinnerContainer}>
-                <span className={styles.spinner}></span>
-                <span>Generating Signature...</span>
-              </div>
-            ) : (
-              stageData && (
-                <div className={styles.cardBody}>
-                  <p className={styles.hintText}>{stageData.hint}</p>
-                  <div className={styles.targetBlock}>
-                    <span className={styles.targetLabel}>TARGET STRING:</span>
-                    <span className={styles.targetValue}>{stageData.correct_string}</span>
-                  </div>
+            {stageData && (
+              <div className={styles.cardBody}>
+                <p className={styles.hintText}>{stageData.hint}</p>
+                <div className={styles.targetBlock}>
+                  <span className={styles.targetLabel}>TARGET STRING:</span>
+                  <span className={styles.targetValue}>{stageData.correct_string}</span>
                 </div>
-              )
+              </div>
             )}
           </div>
 
@@ -442,9 +471,9 @@ function Game({ level, onBackToTitle }) {
               </div>
               <div className={styles.choicesGrid}>
                 {stageData?.choices.map((choice, index) => (
-                  <button 
-                    key={index} 
-                    type="button" 
+                  <button
+                    key={index}
+                    type="button"
                     className={`${styles.choiceBtn} ${regexInput === choice ? styles.choiceBtnActive : ''}`}
                     onClick={() => handleChoiceClick(choice)}
                     disabled={loading || submitStatus !== 'WAITING'}
@@ -472,8 +501,8 @@ function Game({ level, onBackToTitle }) {
                     {regexInput || '選択肢をクリックして選んでください'}
                   </span>
                 ) : (
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className={styles.regexInputField}
                     value={regexInput}
                     onChange={(e) => handleInputChange(e.target.value)}
@@ -500,16 +529,16 @@ function Game({ level, onBackToTitle }) {
 
               {/* Action row */}
               <div className={styles.consoleActionRow}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={styles.skipBtn}
                   onClick={handleSkip}
                   disabled={loading || submitStatus !== 'WAITING'}
                 >
                   SKIP MODULE (-10s)
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={`${styles.submitBtn} ${submitStatus === 'SUCCESS' ? styles.submitBtnReady : ''}`}
                   onClick={handleSubmit}
                   disabled={loading || !regexInput || submitStatus !== 'WAITING'}
