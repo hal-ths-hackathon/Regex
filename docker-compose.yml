@@ -1,35 +1,37 @@
-version: '3.8'
+# =============================================================================
+# docker-compose.yml — 開発・本番 共通のベース定義
+# =============================================================================
+# このファイル単体ではホストへポートを一切公開しない。
+#   - 開発: `docker compose up -d --build`
+#           → docker-compose.override.yml が自動で重なり、localhost のみにポート公開
+#   - 本番: docker-compose.prod.yml を重ねる（override.yml は読み込まれない）
+# パスワード等は .env（開発）/ .env.production（本番）で必ず設定すること。
+# =============================================================================
 services:
   db:
-    image: postgres:15
+    image: postgres:15.20
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-regex}
+      - POSTGRES_USER=${POSTGRES_USER:?POSTGRES_USER を .env に設定してください}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD を .env に設定してください}
+      - POSTGRES_DB=${POSTGRES_DB:?POSTGRES_DB を .env に設定してください}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5439:5432"
 
   backend:
     build:
       context: ./backend
-    env_file:
-      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL を .env に設定してください}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
     depends_on:
       - db
-    ports:
-      - "8090:8000"
-    volumes:
-      - ./backend:/app
 
   frontend:
     build:
       context: ./frontend
-    ports:
-      - "3000:5173"
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
+      target: prod
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8090}
 
 volumes:
   pgdata:

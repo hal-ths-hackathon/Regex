@@ -1,43 +1,41 @@
 # =============================================================================
-# docker-compose.prod.yml — 本番環境用オーバーライド
+# docker-compose.prod.yml — 本番環境用
 # =============================================================================
 # 使い方:
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml \
-#     --env-file .env.production up -d
+#     --env-file .env.production up -d --build
 #
-# このファイルは docker-compose.yml の上に重ねて適用される。
-# - 全サービスの ports を無効化（ホストへのポート公開を遮断）
-# - cloudflared コンテナを追加し、Cloudflare Tunnel 経由のみでアクセス可能にする
-# - 開発用のボリュームマウント（ホットリロード）を無効化
+# - -f を明示するため docker-compose.override.yml（開発用）は読み込まれない
+#   → ホストへのポート公開なし・開発用マウントなし・デバッグ機能なし
+# - cloudflared コンテナ経由（Cloudflare Tunnel）でのみアクセス可能
+# - フロントエンドはビルド済み静的ファイルを nginx（:8080）で配信
 # =============================================================================
 
 services:
   # --- Database ---
   db:
-    ports: !reset []
     restart: unless-stopped
 
   # --- Backend API ---
   backend:
-    ports: !reset []
-    volumes: !reset []
     restart: unless-stopped
     environment:
-      - CORS_ORIGINS=${CORS_ORIGINS:-https://<YOUR_DOMAIN>}
+      - CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS を .env.production に設定してください}
 
   # --- Frontend ---
   frontend:
-    ports: !reset []
-    volumes: !reset []
     restart: unless-stopped
+    build:
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?VITE_API_BASE_URL を .env.production に設定してください}
 
   # --- Cloudflare Tunnel ---
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.11.1
     restart: unless-stopped
-    command: tunnel run
+    command: tunnel --no-autoupdate run
     environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN を .env.production に設定してください}
     depends_on:
       - backend
       - frontend

@@ -13,5 +13,5 @@ node_modules/
 # Local task scratch space
 _todo/
 
-# Docker
-*.dockerignore
+# macOS
+.DS_Store

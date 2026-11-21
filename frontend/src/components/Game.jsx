@@ -37,7 +37,9 @@ function Game({ level, onBackToTitle }) {
 
     try {
       // Try to fetch from backend
-      const response = await fetch(`http://localhost:8090/api/v1/stages/generate?level=${level}`)
+      // 環境変数があればそれを使い、無ければローカルの開発用URLを使う
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8090';
+      const response = await fetch(`${baseUrl}/api/v1/stages/generate?level=${level}`)
       if (!response.ok) {
         throw new Error(`HTTP status ${response.status}`)
       }
