@@ -24,7 +24,7 @@
   │     │      │   Docker内部ネットワーク  │
   │  ┌──▼──┐ ┌─▼───────┐ ┌──────┐        │
   │  │front│ │ backend  │ │  db  │        │
-  │  │:80  │ │ :8000    │ │:5432 │        │
+  │  │:8080│ │ :8000    │ │:5432 │        │
   │  └─────┘ └──────────┘ └──────┘        │
   └───────────────────────────────────────┘
   ※ ルーターのポート開放は一切不要
@@ -59,10 +59,11 @@
 
 | Subdomain | Domain | Service |
 |-----------|--------|---------|
-| (空 or www) | `<YOUR_DOMAIN>` | `http://frontend:80` |
+| (空 or www) | `<YOUR_DOMAIN>` | `http://frontend:8080` |
 | api | `<YOUR_DOMAIN>` | `http://backend:8000` |
 
 > **Note:** Service URL にはコンテナ名を使います。`cloudflared` は同一 Docker ネットワーク内のサービスに名前解決できます。
+> フロントエンドはビルド済みの静的ファイルを非root の nginx（ポート **8080**）で配信します。Vite 開発サーバー（5173）は本番では起動しません。
 
 7. **Save tunnel**
 
@@ -87,7 +88,12 @@ CLOUDFLARE_TUNNEL_TOKEN=eyJ...（トークン全体を貼り付け）
 
 # Cloudflare で公開するドメイン
 CORS_ORIGINS=https://<YOUR_DOMAIN>
+
+# フロントエンドから呼び出す API の URL（ビルド時に埋め込まれる）
+VITE_API_BASE_URL=https://api.<YOUR_DOMAIN>
 ```
+
+> 必須の値が未設定の場合、`docker compose` はエラーで停止します（初期パスワードのまま起動することはありません）。
 
 > **⚠️ このファイルは `.gitignore` で除外されます。Git にコミットしないでください。**
 
@@ -230,7 +236,9 @@ docker volume ls | grep pgdata
 
 | 環境 | コマンド | ポート公開 | トンネル |
 |------|---------|----------|---------|
-| **開発** | `docker compose up -d` | ✅ 8090, 3000, 5439 | なし |
+| **開発** | `docker compose up -d` | ✅ 8090, 3000, 5439（127.0.0.1 のみ） | なし |
 | **本番** | `docker compose -f ... -f docker-compose.prod.yml ...` | ❌ なし | ✅ Cloudflare |
 
-開発用の `docker-compose.yml` は一切変更していないため、ローカル開発は今まで通り動作します。
+- `docker-compose.yml` … 共通定義（ポート公開なし）
+- `docker-compose.override.yml` … 開発用。`docker compose up` 時のみ自動で読み込まれ、localhost へのポート公開・ホットリロード用マウント・Swagger UI / デバッグページ（`ENABLE_DEV_TOOLS=true`）を有効化
+- `docker-compose.prod.yml` … 本番用。`-f` を明示するため override は読み込まれない
